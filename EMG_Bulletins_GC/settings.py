@@ -127,11 +127,21 @@ LOGIN_URL='login'
 LOGIN_REDIRECT_URL = 'home'
 
 # Configuration du logging
-# Créer le dossier logs s'il n'existe pas
+# Créer le dossier logs s'il n'existe pas et vérifier les permissions
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+LOGS_AVAILABLE = False
+
 try:
     os.makedirs(LOGS_DIR, exist_ok=True)
-    LOGS_AVAILABLE = True
+    # Tester si on peut écrire dans le dossier
+    test_file = os.path.join(LOGS_DIR, '.test_write')
+    try:
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+        LOGS_AVAILABLE = True
+    except (OSError, PermissionError):
+        LOGS_AVAILABLE = False
 except (OSError, PermissionError):
     LOGS_AVAILABLE = False
 
@@ -145,22 +155,26 @@ handlers_config = {
 }
 
 if LOGS_AVAILABLE:
-    handlers_config['file'] = {
-        'level': 'ERROR',
-        'class': 'logging.handlers.RotatingFileHandler',
-        'filename': os.path.join(LOGS_DIR, 'django_errors.log'),
-        'maxBytes': 1024 * 1024 * 5,  # 5 MB
-        'backupCount': 5,
-        'formatter': 'verbose',
-    }
-    handlers_config['correcteur_file'] = {
-        'level': 'INFO',
-        'class': 'logging.handlers.RotatingFileHandler',
-        'filename': os.path.join(LOGS_DIR, 'correcteur.log'),
-        'maxBytes': 1024 * 1024 * 5,  # 5 MB
-        'backupCount': 5,
-        'formatter': 'verbose',
-    }
+    try:
+        handlers_config['file'] = {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(LOGS_DIR, 'django_errors.log'),
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        }
+        handlers_config['correcteur_file'] = {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(LOGS_DIR, 'correcteur.log'),
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        }
+    except (OSError, PermissionError):
+        # Si on ne peut pas créer les handlers de fichiers, on continue sans
+        LOGS_AVAILABLE = False
 
 LOGGING = {
     'version': 1,
