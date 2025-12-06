@@ -30,18 +30,24 @@ def enTete(eleve, trimestre,canvas,dictParamBulletins):
                                      alignment=0,
                                      )
 
-    dateNaissance=str(eleve.dateNaissance).split('-')
-    if eleve.genre == 'F':
-        dateNaissanceBulletin = f"née le {dateNaissance[2]}/{dateNaissance[1]}/{dateNaissance[0]}"
+    if eleve.dateNaissance:
+        dateNaissance=str(eleve.dateNaissance).split('-')
+        if eleve.genre == 'F':
+            dateNaissanceBulletin = f"née le {dateNaissance[2]}/{dateNaissance[1]}/{dateNaissance[0]}"
+        else:
+            dateNaissanceBulletin = f"né le {dateNaissance[2]}/{dateNaissance[1]}/{dateNaissance[0]}"
     else:
-        dateNaissanceBulletin = f"né le {dateNaissance[2]}/{dateNaissance[1]}/{dateNaissance[0]}"
-    infosEleve = [TopPadder(Paragraph(f'''
+        dateNaissanceBulletin = ""
+    
+    infosEleve_content = f'''
                 <font size=10>Bulletin scolaire - {trimestre.intitule} {trimestre.annee.intitule}</font> <br />
                 <font size = 17>{eleve.prenom} {eleve.nom} </font><br />
-                <font size = 11>{dateNaissanceBulletin} </font><br />
-                <font size = 13>{eleve.show_classe()}e Classe</font>
-                ''',
-                                      styleInfosEleve))]
+    '''
+    if dateNaissanceBulletin:
+        infosEleve_content += f'<font size = 11>{dateNaissanceBulletin} </font><br />'
+    infosEleve_content += f'<font size = 13>{eleve.show_classe()}e Classe</font>'
+    
+    infosEleve = [TopPadder(Paragraph(infosEleve_content, styleInfosEleve))]
 
     frameInfosEcole.addFromList(infosEcole, canvas)
     frameInfosEleve.addFromList(infosEleve, canvas)
