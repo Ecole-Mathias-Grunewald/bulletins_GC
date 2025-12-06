@@ -484,6 +484,12 @@ class MiseEnPageBulletinForm(forms.ModelForm):
             'largeurIntitule': forms.NumberInput(attrs={'placeholder': 'Largeur colonne titre (%)'}),
             'largeurDescriptif': forms.NumberInput(attrs={'placeholder': 'Largeur colonne descriptif (%)'}),
             'largeurEvaluation': forms.NumberInput(attrs={'placeholder': 'Largeur colonne évaluation (%)'}),
+            'signature_directeur_college': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
+            'signature_directeur_lycee': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
+        }
+        help_texts = {
+            'signature_directeur_college': 'Taille maximale : 100 ko',
+            'signature_directeur_lycee': 'Taille maximale : 100 ko',
         }
 
 class AppreciationCorrectionForm(forms.ModelForm):

@@ -1629,7 +1629,7 @@ def mise_en_page_list(request):
 def mise_en_page_add(request):
     annee_en_cours = models.Annee.objects.filter(is_active=True)[0]
     if request.method=='POST':
-        form=forms.MiseEnPageBulletinForm(request.POST)
+        form=forms.MiseEnPageBulletinForm(request.POST, request.FILES)
         if form.is_valid:
             mise_en_page=form.save()
             info = models.Journal(utilisateur=request.user,
@@ -1644,7 +1644,7 @@ def mise_en_page_change(request,idMiseEnPage):
     annee_en_cours = models.Annee.objects.filter(is_active=True)[0]
     mise_en_page=get_object_or_404(models.MiseEnPageBulletin,id=idMiseEnPage)
     if request.method == 'POST':
-        form = forms.MiseEnPageBulletinForm(request.POST,instance=mise_en_page)
+        form = forms.MiseEnPageBulletinForm(request.POST, request.FILES, instance=mise_en_page)
         if form.is_valid:
             mise_en_page=form.save()
             info = models.Journal(utilisateur=request.user,
@@ -1653,7 +1653,7 @@ def mise_en_page_change(request,idMiseEnPage):
         return redirect('mise_en_page_list')
     else:
         form = forms.MiseEnPageBulletinForm(instance=mise_en_page)
-        return render(request,'bulletins/miseEnPage/mise_en_page_change.html',context={'annee_en_cours': annee_en_cours, 'form': form})
+        return render(request,'bulletins/miseEnPage/mise_en_page_change.html',context={'annee_en_cours': annee_en_cours, 'form': form, 'mise_en_page': mise_en_page})
 
 def mise_en_page_delete(request,idMiseEnPage):
     mise_en_page = get_object_or_404(models.MiseEnPageBulletin, id=idMiseEnPage)

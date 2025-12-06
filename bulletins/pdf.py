@@ -337,13 +337,59 @@ def absenceEtVisa(story,absencesEleve,dictParamBulletins,signatureBulletin,bulle
     if signatureBulletin :
         ligne.append("Visa du Chef d'établissement")
         data.append(ligne)
-        if absencesEleve.eleve.show_classe().cycle == 'COL' :
-            chemin='static/images/visa_college.png'
-        elif absencesEleve.eleve.show_classe().cycle == 'LYC' :
-            chemin = 'static/images/visa_lycee.png'
-        else :
-            chemin = 'static/images/visa_primaire.png'
-        data.append(["", "", Image(settings.BASE_DIR.joinpath(chemin), width=3 * cm, height=0.9 * cm)])
+        
+        # Déterminer le cycle de l'élève
+        cycle = absencesEleve.eleve.show_classe().cycle
+        signature_path = None
+        
+        # Utiliser les signatures du modèle de mise en page si disponibles
+        signature_path = None
+        if cycle == 'COL' and dictParamBulletins.get('signature_college'):
+            signature_path = dictParamBulletins['signature_college']
+        elif cycle == 'LYC' and dictParamBulletins.get('signature_lycee'):
+            signature_path = dictParamBulletins['signature_lycee']
+        
+        # Si une signature personnalisée est disponible, l'utiliser
+        if signature_path:
+            from pathlib import Path
+            from PIL import Image as PILImage
+            
+            if Path(signature_path).exists():
+                # Obtenir les dimensions originales de l'image
+                with PILImage.open(signature_path) as img:
+                    img_width, img_height = img.size
+                    ratio = img_width / img_height
+                
+                # Dimensions maximales autorisées
+                max_width = 3 * cm
+                max_height = 1 * cm
+                
+                # Calculer les dimensions en conservant le ratio
+                # Calculer les dimensions si on utilise la largeur max
+                width_from_max_width = max_width
+                height_from_max_width = max_width / ratio
+                
+                # Calculer les dimensions si on utilise la hauteur max
+                height_from_max_height = max_height
+                width_from_max_height = max_height * ratio
+                
+                # Choisir les dimensions qui respectent les deux contraintes
+                if width_from_max_height <= max_width:
+                    # Si on peut utiliser la hauteur max sans dépasser la largeur max
+                    final_width = width_from_max_height
+                    final_height = height_from_max_height
+                else:
+                    # Sinon, on utilise la largeur max
+                    final_width = width_from_max_width
+                    final_height = height_from_max_width
+                
+                data.append(["", "", Image(signature_path, width=final_width, height=final_height)])
+            else:
+                # Si le fichier n'existe pas, ne rien afficher
+                data.append(["", "", ""])
+        else:
+            # Si aucune signature n'est spécifiée dans le modèle, ne rien afficher
+            data.append(["", "", ""])
 
     else :
         ligne.append("")

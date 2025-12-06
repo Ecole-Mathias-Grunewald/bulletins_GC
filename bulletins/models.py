@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 import io
 from django.http import FileResponse
@@ -9,6 +10,15 @@ from reportlab.lib.units import cm
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import Frame
 from . import pdf
+
+def validate_file_size(value):
+    """Valide que le fichier ne dépasse pas 100 ko"""
+    max_size = 100 * 1024  # 100 ko en octets
+    if value.size > max_size:
+        raise ValidationError(
+            _('Le fichier ne peut pas dépasser 100 ko. Taille actuelle : %(size)s ko'),
+            params={'size': round(value.size / 1024, 2)},
+        )
 
 class Annee(models.Model):
     intitule = models.CharField(max_length=9)
@@ -466,6 +476,8 @@ class MiseEnPageBulletin(models.Model):
     largeurIntitule=models.IntegerField(validators=[MinValueValidator(0),MaxValueValidator(100)],default=20)
     largeurDescriptif=models.IntegerField(validators=[MinValueValidator(0),MaxValueValidator(100)],default=25)
     largeurEvaluation=models.IntegerField(validators=[MinValueValidator(0),MaxValueValidator(100)],default=55)
+    signature_directeur_college=models.ImageField(upload_to='signatures/', blank=True, null=True, verbose_name='Signature directeur collège', validators=[validate_file_size])
+    signature_directeur_lycee=models.ImageField(upload_to='signatures/', blank=True, null=True, verbose_name='Signature directeur lycée', validators=[validate_file_size])
 
     def __str__(self):
         return self.intitule
@@ -546,6 +558,24 @@ class ListBulletinScolaire(models.Model):
             dictParamBulletins['largeurIntitule']=self.miseEnPage.largeurIntitule
             dictParamBulletins['largeurDescriptif'] = self.miseEnPage.largeurDescriptif
             dictParamBulletins['largeurEvaluation'] = self.miseEnPage.largeurEvaluation
+            # Ajout des signatures si elles existent
+            try:
+                if self.miseEnPage.signature_directeur_college and self.miseEnPage.signature_directeur_college.name:
+                    dictParamBulletins['signature_college'] = self.miseEnPage.signature_directeur_college.path
+                else:
+                    dictParamBulletins['signature_college'] = None
+            except (ValueError, AttributeError):
+                dictParamBulletins['signature_college'] = None
+            try:
+                if self.miseEnPage.signature_directeur_lycee and self.miseEnPage.signature_directeur_lycee.name:
+                    dictParamBulletins['signature_lycee'] = self.miseEnPage.signature_directeur_lycee.path
+                else:
+                    dictParamBulletins['signature_lycee'] = None
+            except (ValueError, AttributeError):
+                dictParamBulletins['signature_lycee'] = None
+        else:
+            dictParamBulletins['signature_college'] = None
+            dictParamBulletins['signature_lycee'] = None
 
         for eleve in self.eleves.all() :
             for trimestre in self.trimestres.all():

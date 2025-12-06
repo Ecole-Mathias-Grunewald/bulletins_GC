@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
+from django.conf import settings
+from django.conf.urls.static import static
 import bulletins.views
 import authentication.views
 
@@ -198,3 +200,7 @@ urlpatterns = [
     path('enseignants/',authentication.views.enseignants_list,name='enseignants_list'),
     path('profil/',authentication.views.myProfil,name="my_profil"),
 ]
+
+# Configuration pour servir les fichiers média en développement
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
