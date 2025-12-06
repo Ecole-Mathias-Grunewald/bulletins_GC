@@ -146,6 +146,15 @@ try:
     # Essayer de créer les handlers de fichiers
     # Si ça échoue, on utilisera uniquement la console
     try:
+        # Importer la classe pour tester
+        from logging.handlers import RotatingFileHandler
+        
+        # Tester si on peut vraiment écrire en créant un handler de test
+        test_file = os.path.join(LOGS_DIR, 'correcteur.log')
+        test_handler = RotatingFileHandler(test_file, maxBytes=1024 * 1024 * 5, backupCount=5)
+        test_handler.close()
+        
+        # Si le test réussit, ajouter les handlers
         handlers_config['file'] = {
             'level': 'ERROR',
             'class': 'logging.handlers.RotatingFileHandler',
@@ -162,11 +171,6 @@ try:
             'backupCount': 5,
             'formatter': 'verbose',
         }
-        # Tester si on peut vraiment écrire (en essayant d'ouvrir le fichier)
-        test_handler = handlers_config['correcteur_file']['class'](
-            filename=handlers_config['correcteur_file']['filename']
-        )
-        test_handler.close()
         LOGS_AVAILABLE = True
     except (OSError, PermissionError, ValueError) as e:
         # Si on ne peut pas créer les handlers de fichiers, on les retire
