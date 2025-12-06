@@ -1686,7 +1686,7 @@ def correcteur_orthographe(request):
                 'language': 'fr',
                 'enabledOnly': 'false'
             },
-            timeout=5
+            timeout=10  # Augmenté à 10 secondes pour les connexions lentes
         )
         
         if response.status_code == 200:
@@ -1697,13 +1697,36 @@ def correcteur_orthographe(request):
                 'original_text': text  # Retourner le texte original pour référence
             })
         else:
+            # Logger l'erreur pour le débogage
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f'LanguageTool API error: status {response.status_code}, response: {response.text[:200]}')
             return JsonResponse({
-                'error': 'Erreur lors de la correction',
+                'error': f'Erreur lors de la correction (code {response.status_code})',
                 'success': False
             }, status=response.status_code)
             
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.Timeout:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error('LanguageTool API timeout')
         return JsonResponse({
-            'error': 'Erreur de connexion au service de correction',
+            'error': 'Timeout lors de la connexion au service de correction',
+            'success': False
+        }, status=504)
+    except requests.exceptions.ConnectionError as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'LanguageTool API connection error: {str(e)}')
+        return JsonResponse({
+            'error': 'Impossible de se connecter au service de correction. Vérifiez la connexion internet.',
+            'success': False
+        }, status=503)
+    except requests.exceptions.RequestException as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f'LanguageTool API request error: {str(e)}')
+        return JsonResponse({
+            'error': f'Erreur de connexion au service de correction: {str(e)}',
             'success': False
         }, status=500)
