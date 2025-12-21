@@ -149,6 +149,7 @@ class Projet(models.Model):
 
     class TypeProjet(models.TextChoices):
         TRAVAIL_ANNEE = 'TA', _("Travail d'année")
+        PROJET_PILOTE = 'PP', _("Projet pilote")
         AUTRE = 'AUTRE', _("Projet divers")
         PERSO = 'PERS', _("Projet personnel")
         COLL = 'COLL', _("Projet collectif")
@@ -438,10 +439,12 @@ class CompetencesAppreciations(models.Model):
 
     class TypeEvaluation(models.TextChoices):
         NONEVAL = '-', _("Non évalué")
-        ACQUIS = 'Très bonne maîtrise', _("Très bonne maîtrise")
         NONACQUIS = 'Maîtrise insuffisante', _("Maîtrise insuffisante")
         PARTIELLEMENTACQUIS = 'Maîtrise partielle', _("Maîtrise partielle")
+        ACQUIS = 'Très bonne maîtrise', _("Très bonne maîtrise")
         GLOBALACQUIS = 'Maîtrise satisfaisante', _("Maîtrise satisfaisante")
+
+
 
     competence=models.ForeignKey(CompetencesConnaissances,on_delete=models.CASCADE)
     appreciation=models.ForeignKey(Appreciation,on_delete=models.CASCADE)

@@ -129,6 +129,8 @@ def projet(projetEleve,fontSize,font):
     paragraphe = ''
     if projetEleve.typeProjet == 'TA':
         paragraphe+=f'''<b><font size={fontSize*1.1}>Travail d'année'''
+    elif projetEleve.typeProjet == 'PP':
+        paragraphe+=f'''<b><font size={fontSize*1.1}>Projet pilote'''
     elif projetEleve.typeProjet == 'PERS':
         paragraphe+=f'''<b><font size={fontSize*1.1}>Projet personnel'''
     elif projetEleve.typeProjet == 'COLL':
