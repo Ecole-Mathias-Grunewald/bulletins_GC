@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load bulletins_extras %}
+{% block breadcrumb%}
+<li class="breadcrumb-item"><a href="{% url 'home' %}" class="link-secondary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">Accueil</a></li>
+<li class="breadcrumb-item"><a href="{% url 'bulletins_admin_select' %}" class="link-secondary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">Éditer Bulletins</a></li>
+<li class="breadcrumb-item active" aria-current="page" class="text-secondary">Confirmation d'envoi</li>
+{% endblock breadcrumb%}
+{% block content %}
+<div class="container-fluid container-md mt-4">
+    <div class="row">
+        <div class="col-12 col-lg-11 col-xl-10">
+            <h1 class="mb-4">Confirmation d'envoi des bulletins par email</h1>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="alert alert-warning" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> <strong>Attention :</strong> Vous êtes sur le point d'envoyer les bulletins par email aux destinataires configurés pour chaque élève.
+            </div>
+
+            <fieldset class="rounded shadow p-4 mb-4">
+                <h2 class="fs-4 pb-2">Trimestres sélectionnés</h2>
+                <ul class="list-unstyled">
+                    {% for trimestre in trimestres %}
+                        <li><i class="bi bi-check-circle text-success"></i> {{ trimestre.intitule }}</li>
+                    {% endfor %}
+                </ul>
+            </fieldset>
+
+            {% if eleves_without_emails %}
+            <fieldset class="rounded shadow p-4 mb-4 border-danger">
+                <h2 class="fs-4 pb-2 text-danger">Élèves sans adresse email configurée</h2>
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i> Les bulletins suivants ne pourront pas être envoyés car aucune adresse email n'a été configurée pour ces élèves.
+                </div>
+                <ul class="list-unstyled">
+                    {% for eleve in eleves_without_emails %}
+                        <li><i class="bi bi-x-circle text-danger"></i> {{ eleve.prenom }} {{ eleve.nom }}</li>
+                    {% endfor %}
+                </ul>
+                <p class="text-muted mt-2">
+                    <small>Pour configurer les adresses email, allez dans la page d'édition de l'élève.</small>
+                </p>
+            </fieldset>
+            {% endif %}
+
+            {% if eleves_with_emails %}
+            <form method="post" action="{% url 'bulletins_send' %}">
+                {% csrf_token %}
+                {% for trimestre_id in trimestres_ids %}
+                    <input type="hidden" name="trimestres" value="{{ trimestre_id }}">
+                {% endfor %}
+                {% for eleve_id in eleves_ids %}
+                    <input type="hidden" name="eleves" value="{{ eleve_id }}">
+                {% endfor %}
+                {% for classe_nom in classes_noms %}
+                    <input type="hidden" name="classes" value="{{ classe_nom }}">
+                {% endfor %}
+                {% if options.signatureBulletin %}
+                    <input type="hidden" name="signatureBulletin" value="1">
+                {% endif %}
+                {% if options.bulletinUtilisationCompetence %}
+                    <input type="hidden" name="bulletinUtilisationCompetence" value="1">
+                {% endif %}
+                {% if options.bulletinAbsencesRetards %}
+                    <input type="hidden" name="bulletinAbsencesRetards" value="1">
+                {% endif %}
+                {% if options.bulletinNotice %}
+                    <input type="hidden" name="bulletinNotice" value="1">
+                {% endif %}
+                {% if options.bulletinVersionProvisoire %}
+                    <input type="hidden" name="bulletinVersionProvisoire" value="1">
+                {% endif %}
+                {% if options.bulletinAvisCollege %}
+                    <input type="hidden" name="bulletinAvisCollege" value="1">
+                {% endif %}
+                {% if options.miseEnPage %}
+                    <input type="hidden" name="miseEnPage" value="{{ options.miseEnPage }}">
+                {% endif %}
+                
+                <fieldset class="rounded shadow p-4 mb-4">
+                    <h2 class="fs-4 pb-2">Élèves avec adresses email configurées</h2>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Élève</th>
+                                    <th>Adresses email destinataires</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in eleves_with_emails %}
+                                <tr>
+                                    <td><strong>{{ item.eleve.prenom }} {{ item.eleve.nom }}</strong></td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-2">
+                                            {% for email in item.emails %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="checkbox" 
+                                                       name="selected_emails_{{ item.eleve.id }}" 
+                                                       value="{{ email }}" 
+                                                       id="email_{{ item.eleve.id }}_{{ forloop.counter }}" 
+                                                       checked>
+                                                <label class="form-check-label" for="email_{{ item.eleve.id }}_{{ forloop.counter }}">
+                                                    {{ email }}
+                                                </label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </fieldset>
+                
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'bulletins_admin_select' %}" class="btn btn-secondary shadow">Annuler</a>
+                    <button type="submit" class="btn bg-teal text-white shadow">
+                        <i class="bi bi-send"></i> Confirmer l'envoi
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> Aucun élève avec adresse email configurée. Impossible d'envoyer les bulletins.
+            </div>
+            <div class="d-flex justify-content-end mt-4">
+                <a href="{% url 'bulletins_admin_select' %}" class="btn btn-secondary shadow">Retour</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+

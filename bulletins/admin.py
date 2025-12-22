@@ -1,7 +1,7 @@
 from django.contrib import admin
 from bulletins.models import Classe,Eleve,Trimestre,\
     Absence,Discipline,CompetencesConnaissances,Appreciation,\
-    CompetencesAppreciations,ListBulletinScolaire,Annee,AvisCollege,Stage,Projet,Bareme,MiseEnPageBulletin
+    CompetencesAppreciations,ListBulletinScolaire,Annee,AvisCollege,Stage,Projet,Bareme,MiseEnPageBulletin,SMTPSettings
 
 class EleveAdmin(admin.ModelAdmin):
     list_display = ('nom','prenom')
@@ -39,6 +39,18 @@ class BaremeAdmin(admin.ModelAdmin):
 class MiseEnPageBulletinAdmin(admin.ModelAdmin):
     list_display = ('intitule',)
 
+class SMTPSettingsAdmin(admin.ModelAdmin):
+    list_display = ('host', 'port', 'from_email', 'is_active')
+    fields = ('host', 'port', 'use_tls', 'username', 'password', 'from_email', 'is_active')
+    
+    def has_add_permission(self, request):
+        # Empêcher l'ajout de plusieurs instances
+        return not SMTPSettings.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        # Empêcher la suppression de l'instance unique
+        return False
+
 admin.site.register(Classe,ClasseAdmin)
 admin.site.register(Annee)
 admin.site.register(Absence,AbsenceAdmin)
@@ -54,5 +66,6 @@ admin.site.register(Projet,ProjetAdmin)
 admin.site.register(Bareme,BaremeAdmin)
 admin.site.register(MiseEnPageBulletin,MiseEnPageBulletinAdmin)
 admin.site.register(AvisCollege,AvisCollegeAdmin)
+admin.site.register(SMTPSettings,SMTPSettingsAdmin)
 
 

@@ -179,6 +179,8 @@ urlpatterns = [
     # Édition des bulletins
     path('bulletin/select/',bulletins.views.bulletins_select,name='bulletins_select'),
     path('bulletin/admin/select/', bulletins.views.bulletins_select, name='bulletins_admin_select'),
+    path('bulletin/admin/send/confirm/', bulletins.views.bulletins_send_confirm, name='bulletins_send_confirm'),
+    path('bulletin/admin/send/', bulletins.views.bulletins_send, name='bulletins_send'),
 
     #Édition du barême de la notice
     path('bareme/',bulletins.views.bareme_list,name='bareme_list'),
@@ -199,6 +201,9 @@ urlpatterns = [
     #Gestion des enseignants
     path('enseignants/',authentication.views.enseignants_list,name='enseignants_list'),
     path('profil/',authentication.views.myProfil,name="my_profil"),
+    
+    #Paramètres SMTP
+    path('smtp/settings/',bulletins.views.smtp_settings,name='smtp_settings'),
     
     #Correcteur orthographique
     path('api/correcteur/',bulletins.views.correcteur_orthographe,name='correcteur_orthographe'),

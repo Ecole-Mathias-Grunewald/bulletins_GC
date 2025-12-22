@@ -20,6 +20,15 @@
                     <h1 class="mb-5">Consulter Bulletins (version provisoire) {{annee_en_cours}}</h1>
                 {% endif %}
 
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-4" role="alert">
+                        <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i> {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
                 {% if log%}
                     {% for message in log %}
 
@@ -169,13 +178,103 @@
                     <a class=" btn btn-danger me-md-2 shadow" data-bs-toggle="offcanvas" href="#offcanvasOptions" role="button" aria-controls="offcanvasOptions">
                         Options
                         </a>
-                    
-                        <button type="submit" class="btn btn-primary shadow">Éditer</button>
+                        <button type="submit" class="btn btn-primary me-md-2 shadow">Éditer</button>
+                    {% if 'admin' in request.path and user.role == 'ADMIN' %}
+                        <button type="button" class="btn bg-teal text-white shadow" onclick="prepareSendBulletins()">
+                            Envoyer
+                        </button>
+                    {% endif %}
             </div>
         </div>
     </div>
 </div>
 
 </form>
+
+{% if 'admin' in request.path and user.role == 'ADMIN' %}
+<script>
+function showAlert(message) {
+    // Créer une alerte Bootstrap identique à celle utilisée pour les messages log
+    const alertContainer = document.querySelector('.col-12.col-lg-11.col-xl-10.mt-4');
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-primary alert-dismissible fade show mt-4';
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.innerHTML = `
+        <i class="bi bi-exclamation-triangle"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Insérer l'alerte après le titre
+    const title = alertContainer.querySelector('h1');
+    if (title && title.nextSibling) {
+        alertContainer.insertBefore(alertDiv, title.nextSibling);
+    } else {
+        alertContainer.appendChild(alertDiv);
+    }
+    
+    // Faire défiler jusqu'à l'alerte
+    alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function prepareSendBulletins() {
+    // Récupérer les données du formulaire
+    const form = document.querySelector('form');
+    const formData = new FormData(form);
+    
+    // Vérifier qu'au moins un trimestre est sélectionné
+    const trimestres = formData.getAll('trimestres');
+    if (trimestres.length === 0) {
+        showAlert('Sélectionnez au moins un trimestre.');
+        return;
+    }
+    
+    // Vérifier qu'au moins un élève ou une classe est sélectionné
+    const eleves = formData.getAll('eleves');
+    const classesEntieres = [];
+    {% for classe in list_classes %}
+    if (formData.has('{{classe.0.nom}}entier')) {
+        classesEntieres.push('{{classe.0.nom}}');
+    }
+    {% endfor %}
+    
+    if (eleves.length === 0 && classesEntieres.length === 0) {
+        showAlert('Veuillez sélectionner au moins un élève ou une classe.');
+        return;
+    }
+    
+    // Rediriger vers la page de confirmation avec tous les paramètres
+    const params = new URLSearchParams();
+    trimestres.forEach(t => params.append('trimestres', t));
+    eleves.forEach(e => params.append('eleves', e));
+    classesEntieres.forEach(c => params.append('classes', c));
+    
+    // Ajouter les options du formulaire
+    if (formData.has('signatureBulletin')) {
+        params.append('signatureBulletin', '1');
+    }
+    if (formData.has('bulletinUtilisationCompetence')) {
+        params.append('bulletinUtilisationCompetence', '1');
+    }
+    if (formData.has('bulletinAbsencesRetards')) {
+        params.append('bulletinAbsencesRetards', '1');
+    }
+    if (formData.has('bulletinNotice')) {
+        params.append('bulletinNotice', '1');
+    }
+    if (formData.has('bulletinVersionProvisoire')) {
+        params.append('bulletinVersionProvisoire', '1');
+    }
+    if (formData.has('bulletinAvisCollege')) {
+        params.append('bulletinAvisCollege', '1');
+    }
+    const miseEnPage = formData.get('miseEnPage');
+    if (miseEnPage) {
+        params.append('miseEnPage', miseEnPage);
+    }
+    
+    window.location.href = '{% url "bulletins_send_confirm" %}?' + params.toString();
+}
+</script>
+{% endif %}
 
 {% endblock content %}

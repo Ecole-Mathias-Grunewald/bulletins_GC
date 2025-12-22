@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% load bulletins_extras %}
+{% block breadcrumb%}
+<li class="breadcrumb-item"><a href="{% url 'home' %}" class="link-secondary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">Accueil</a></li>
+<li class="breadcrumb-item">Paramètres SMTP</li>
+{% endblock breadcrumb%}
+{% block content %}
+<form action="" method="post" id="smtp-form">
+    {% csrf_token %}
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+<div class="container-fluid container-md mt-4">
+    <div class="row">
+        <div class="col-12 col-lg-11 col-xl-10">
+            <h1 class="mb-3">Configuration du serveur SMTP</h1>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% if form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    <strong>Erreurs dans le formulaire :</strong>
+                    <ul class="mb-0">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle"></i> Configurez les paramètres de votre serveur SMTP pour permettre l'envoi d'emails depuis l'application.
+            </div>
+
+            <fieldset class="rounded shadow p-4">
+                <h2 class="fs-4 pb-2">Paramètres de connexion</h2>
+
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-3">
+                        <div class="form-floating">
+                            {{form.host|add_classes:'form-control'}}
+                            <label for="{{form.host.id_for_label}}">Serveur SMTP</label>
+                        </div>
+                        {% if form.host.help_text %}
+                            <small class="form-text text-muted">{{ form.host.help_text }}</small>
+                        {% endif %}
+                        {% if form.host.errors %}
+                            <div class="text-danger small">{{ form.host.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3">
+                        <div class="form-floating">
+                            {{form.port|add_classes:'form-control'}}
+                            <label for="{{form.port.id_for_label}}">Port</label>
+                        </div>
+                        {% if form.port.help_text %}
+                            <small class="form-text text-muted">{{ form.port.help_text }}</small>
+                        {% endif %}
+                        {% if form.port.errors %}
+                            <div class="text-danger small">{{ form.port.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        {{form.use_tls|add_classes:'form-check-input'}}
+                        <label class="form-check-label" for="{{form.use_tls.id_for_label}}">
+                            Utiliser TLS (décocher pour SSL)
+                        </label>
+                    </div>
+                    {% if form.use_tls.help_text %}
+                        <small class="form-text text-muted">{{ form.use_tls.help_text }}</small>
+                    {% endif %}
+                    {% if form.use_tls.errors %}
+                        <div class="text-danger small">{{ form.use_tls.errors }}</div>
+                    {% endif %}
+                </div>
+            </fieldset>
+
+            <fieldset class="rounded shadow p-4 mt-4">
+                <h2 class="fs-4 pb-2">Authentification</h2>
+
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-3">
+                        <div class="form-floating">
+                            {{form.username|add_classes:'form-control'}}
+                            <label for="{{form.username.id_for_label}}">Nom d'utilisateur</label>
+                        </div>
+                        {% if form.username.help_text %}
+                            <small class="form-text text-muted">{{ form.username.help_text }}</small>
+                        {% endif %}
+                        {% if form.username.errors %}
+                            <div class="text-danger small">{{ form.username.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12 col-md-6 mb-3">
+                        <div class="form-floating">
+                            {{form.password|add_classes:'form-control'}}
+                            <label for="{{form.password.id_for_label}}">Mot de passe</label>
+                        </div>
+                        {% if form.password.help_text %}
+                            <small class="form-text text-muted">{{ form.password.help_text }}</small>
+                        {% endif %}
+                        {% if form.password.errors %}
+                            <div class="text-danger small">{{ form.password.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="rounded shadow p-4 mt-4">
+                <h2 class="fs-4 pb-2">Email expéditeur</h2>
+
+                <div class="mb-3">
+                    <div class="form-floating">
+                        {{form.from_email|add_classes:'form-control'}}
+                        <label for="{{form.from_email.id_for_label}}">Adresse email expéditeur</label>
+                    </div>
+                    {% if form.from_email.help_text %}
+                        <small class="form-text text-muted">{{ form.from_email.help_text }}</small>
+                    {% endif %}
+                    {% if form.from_email.errors %}
+                        <div class="text-danger small">{{ form.from_email.errors }}</div>
+                    {% endif %}
+                </div>
+            </fieldset>
+
+            <fieldset class="rounded shadow p-4 mt-4">
+                <h2 class="fs-4 pb-2">Activation</h2>
+
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        {{form.is_active|add_classes:'form-check-input'}}
+                        <label class="form-check-label" for="{{form.is_active.id_for_label}}">
+                            Activer l'envoi d'emails via SMTP
+                        </label>
+                    </div>
+                    {% if form.is_active.help_text %}
+                        <small class="form-text text-muted">{{ form.is_active.help_text }}</small>
+                    {% endif %}
+                    {% if form.is_active.errors %}
+                        <div class="text-danger small">{{ form.is_active.errors }}</div>
+                    {% endif %}
+                </div>
+            </fieldset>
+
+            <div class="mt-4 mb-4">
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-primary shadow" type="submit">Enregistrer</button>
+                    <a class="btn btn-secondary shadow" href="{% url 'home' %}">Annuler</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</form>
+
+<div class="container-fluid container-md mt-4">
+    <div class="row">
+        <div class="col-12 col-lg-11 col-xl-10">
+            <fieldset class="rounded shadow p-4">
+                <h2 class="fs-4 pb-2">Test de configuration</h2>
+                
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i> Enregistrez d'abord les paramètres SMTP avant de tester l'envoi d'email.
+                </div>
+
+                <form method="post" action="{% url 'smtp_settings' %}" id="test-email-form" class="d-flex gap-2 align-items-end">
+                    {% csrf_token %}
+                    <input type="hidden" name="test_email" value="1">
+                    <div class="flex-grow-1">
+                        <label for="test_email_address" class="form-label">Adresse email de test</label>
+                        <input type="email" 
+                               class="form-control" 
+                               id="test_email_address" 
+                               name="test_email_address" 
+                               placeholder="test@exemple.com"
+                               required>
+                        <small class="form-text text-muted">Un email de test sera envoyé à cette adresse pour vérifier la configuration SMTP.</small>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-info text-white">
+                            <i class="bi bi-send"></i> Envoyer un email de test
+                        </button>
+                    </div>
+                </form>
+            </fieldset>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+

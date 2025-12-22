@@ -7,11 +7,25 @@ from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from django.utils.http import urlencode
+from django.core.mail import EmailMessage
+from django.conf import settings
+from django.contrib import messages
 from . import models
 from . import forms
 from . import tools
 import csv
 import requests
+import smtplib
+import io
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import cm
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import Frame
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+import base64
 
 @login_required
 def home(request):
@@ -1655,6 +1669,395 @@ def mise_en_page_change(request,idMiseEnPage):
     else:
         form = forms.MiseEnPageBulletinForm(instance=mise_en_page)
         return render(request,'bulletins/miseEnPage/mise_en_page_change.html',context={'annee_en_cours': annee_en_cours, 'form': form, 'mise_en_page': mise_en_page})
+
+@login_required
+def smtp_settings(request):
+    """
+    Vue pour gérer les paramètres SMTP.
+    Réservée aux administrateurs uniquement.
+    """
+    # Vérifier que l'utilisateur est administrateur
+    if not request.user.is_authenticated or request.user.role != 'ADMIN':
+        return redirect('home')
+    
+    annee_en_cours = models.Annee.objects.filter(is_active=True)[0]
+    smtp_settings = models.SMTPSettings.get_settings()
+    test_result = None
+    
+    # Initialiser le formulaire (sera réutilisé ou recréé selon le cas)
+    form = forms.SMTPSettingsForm(instance=smtp_settings)
+    
+    if request.method == 'POST':
+        # Vérifier si c'est un test d'envoi d'email
+        if 'test_email' in request.POST:
+            test_email = request.POST.get('test_email_address', '').strip()
+            if not test_email:
+                messages.error(request, 'Veuillez spécifier une adresse email pour le test.')
+            else:
+                # Tester l'envoi d'email avec les paramètres actuels
+                test_result = test_smtp_connection(smtp_settings, test_email)
+                if test_result['success']:
+                    messages.success(request, f'Email de test envoyé avec succès à {test_email}')
+                else:
+                    messages.error(request, f'Erreur lors de l\'envoi de l\'email de test : {test_result["error"]}')
+            # Recharger le formulaire avec les données actuelles après le test
+            form = forms.SMTPSettingsForm(instance=smtp_settings)
+        else:
+            # Sauvegarder les paramètres SMTP
+            form = forms.SMTPSettingsForm(request.POST, instance=smtp_settings)
+            if form.is_valid():
+                try:
+                    form.save()
+                    info = models.Journal(utilisateur=request.user,
+                                        message='Modification des paramètres SMTP')
+                    info.save()
+                    messages.success(request, 'Paramètres SMTP enregistrés avec succès.')
+                    return redirect('smtp_settings')
+                except Exception as e:
+                    messages.error(request, f'Erreur lors de l\'enregistrement : {str(e)}')
+            else:
+                # Afficher les erreurs du formulaire
+                error_messages = []
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        error_messages.append(f'{form.fields[field].label if field in form.fields else field}: {error}')
+                if error_messages:
+                    messages.error(request, 'Erreurs dans le formulaire : ' + ' | '.join(error_messages))
+    
+    return render(request, 'bulletins/smtp/smtp_settings.html', 
+                 context={'annee_en_cours': annee_en_cours, 'form': form, 'smtp_settings': smtp_settings, 'test_result': test_result})
+
+@login_required
+def bulletins_send_confirm(request):
+    """
+    Page de confirmation pour l'envoi des bulletins par email.
+    Réservée aux administrateurs uniquement.
+    """
+    # Vérifier que l'utilisateur est administrateur
+    if not request.user.is_authenticated or request.user.role != 'ADMIN':
+        return redirect('home')
+    
+    annee_en_cours = models.Annee.objects.filter(is_active=True)[0]
+    
+    # Récupérer les paramètres de la requête
+    trimestres_ids = request.GET.getlist('trimestres')
+    eleves_ids = request.GET.getlist('eleves')
+    classes_noms = request.GET.getlist('classes')
+    
+    # Récupérer les options pour les passer au template
+    options = {
+        'signatureBulletin': 'signatureBulletin' in request.GET,
+        'bulletinUtilisationCompetence': 'bulletinUtilisationCompetence' in request.GET,
+        'bulletinAbsencesRetards': 'bulletinAbsencesRetards' in request.GET,
+        'bulletinNotice': 'bulletinNotice' in request.GET,
+        'bulletinVersionProvisoire': 'bulletinVersionProvisoire' in request.GET,
+        'bulletinAvisCollege': 'bulletinAvisCollege' in request.GET,
+        'miseEnPage': request.GET.get('miseEnPage', ''),
+    }
+    
+    # Vérifier qu'au moins un trimestre est sélectionné
+    if not trimestres_ids:
+        messages.error(request, 'Veuillez sélectionner au moins un trimestre.')
+        return redirect('bulletins_admin_select')
+    
+    # Récupérer les trimestres
+    trimestres = models.Trimestre.objects.filter(intitule__in=trimestres_ids).filter(annee=annee_en_cours)
+    
+    # Récupérer les élèves
+    eleves_list = []
+    if eleves_ids:
+        eleves_list.extend(models.Eleve.objects.filter(id__in=eleves_ids))
+    
+    # Ajouter les élèves des classes entières
+    for classe_nom in classes_noms:
+        try:
+            classe = models.Classe.objects.get(nom=classe_nom, annee=annee_en_cours)
+            eleves_list.extend(models.Eleve.objects.filter(classe=classe))
+        except models.Classe.DoesNotExist:
+            pass
+    
+    # Supprimer les doublons
+    eleves_list = list(set(eleves_list))
+    
+    if not eleves_list:
+        messages.error(request, 'Veuillez sélectionner au moins un élève ou une classe.')
+        return redirect('bulletins_admin_select')
+    
+    # Préparer les données pour l'affichage : élève -> emails
+    eleves_with_emails = []
+    eleves_without_emails = []
+    
+    for eleve in eleves_list:
+        emails = eleve.get_emails_bulletin_list()
+        if emails:
+            eleves_with_emails.append({'eleve': eleve, 'emails': emails})
+        else:
+            eleves_without_emails.append(eleve)
+    
+    return render(request, 'bulletins/bulletin/bulletins_send_confirm.html', 
+                 context={
+                     'annee_en_cours': annee_en_cours,
+                     'trimestres': trimestres,
+                     'eleves_with_emails': eleves_with_emails,
+                     'eleves_without_emails': eleves_without_emails,
+                     'trimestres_ids': trimestres_ids,
+                     'eleves_ids': [e.id for e in eleves_list],
+                     'classes_noms': classes_noms,
+                     'options': options,
+                 })
+
+@login_required
+def bulletins_send(request):
+    """
+    Envoie les bulletins par email.
+    Réservée aux administrateurs uniquement.
+    """
+    # Vérifier que l'utilisateur est administrateur
+    if not request.user.is_authenticated or request.user.role != 'ADMIN':
+        return redirect('home')
+    
+    # Vérifier que les paramètres SMTP sont activés
+    smtp_settings = models.SMTPSettings.get_settings()
+    if not smtp_settings.is_active:
+        messages.error(request, 'Les paramètres SMTP ne sont pas activés. Veuillez les configurer dans les paramètres.')
+        return redirect('smtp_settings')
+    
+    annee_en_cours = models.Annee.objects.filter(is_active=True)[0]
+    
+    # Récupérer les paramètres de la requête
+    trimestres_ids = request.POST.getlist('trimestres')
+    eleves_ids = request.POST.getlist('eleves')
+    classes_noms = request.POST.getlist('classes')
+    
+    # Récupérer les trimestres
+    trimestres = models.Trimestre.objects.filter(intitule__in=trimestres_ids).filter(annee=annee_en_cours)
+    
+    # Récupérer les élèves
+    eleves_list = []
+    if eleves_ids:
+        eleves_list.extend(models.Eleve.objects.filter(id__in=eleves_ids))
+    
+    # Ajouter les élèves des classes entières
+    for classe_nom in classes_noms:
+        try:
+            classe = models.Classe.objects.get(nom=classe_nom, annee=annee_en_cours)
+            eleves_list.extend(models.Eleve.objects.filter(classe=classe))
+        except models.Classe.DoesNotExist:
+            pass
+    
+    # Supprimer les doublons
+    eleves_list = list(set(eleves_list))
+    
+    # Générer et envoyer les bulletins
+    success_count = 0
+    error_count = 0
+    errors = []
+    
+    for eleve in eleves_list:
+        # Récupérer les emails sélectionnés pour cet élève via les checkboxes
+        checkbox_name = f'selected_emails_{eleve.id}'
+        selected_emails = request.POST.getlist(checkbox_name)
+        
+        # Si aucun email n'est sélectionné, vérifier s'il y a des emails configurés
+        if not selected_emails:
+            all_emails = eleve.get_emails_bulletin_list()
+            if not all_emails:
+                # Aucune adresse email configurée : erreur
+                error_count += 1
+                errors.append(f'{eleve.prenom} {eleve.nom} : aucune adresse email configurée')
+            # Si des emails sont configurés mais décochés, on ignore simplement cet élève sans erreur
+            continue
+        
+        emails = selected_emails
+        
+        # Générer le bulletin pour cet élève
+        try:
+            # Créer une ListBulletinScolaire temporaire pour cet élève
+            data = {
+                'eleves': [eleve],
+                'trimestres': trimestres,
+            }
+            # Ajouter les options si présentes
+            if 'signatureBulletin' in request.POST:
+                data['signatureBulletin'] = True
+            if 'bulletinUtilisationCompetence' in request.POST:
+                data['bulletinUtilisationCompetence'] = True
+            if 'bulletinAbsencesRetards' in request.POST:
+                data['bulletinAbsencesRetards'] = True
+            if 'bulletinNotice' in request.POST:
+                data['bulletinNotice'] = True
+            if 'bulletinVersionProvisoire' in request.POST:
+                data['bulletinVersionProvisoire'] = True
+            if 'bulletinAvisCollege' in request.POST:
+                data['bulletinAvisCollege'] = True
+            if 'miseEnPage' in request.POST:
+                idMiseEnpage = request.POST.get('miseEnPage')
+                if idMiseEnpage:
+                    try:
+                        miseEnPage = models.MiseEnPageBulletin.objects.get(id=int(idMiseEnpage))
+                        data['miseEnPage'] = miseEnPage
+                    except (models.MiseEnPageBulletin.DoesNotExist, ValueError):
+                        pass
+            
+            bulletins_form = forms.BulletinsEdition(data)
+            if bulletins_form.is_valid():
+                bulletinsEdition = bulletins_form.save()
+                
+                # Générer le PDF et récupérer le contenu
+                pdf_content = bulletinsEdition.produceBulletinContent()
+                
+                if pdf_content:
+                    # Envoyer l'email avec le PDF en pièce jointe
+                    result = send_bulletin_email(smtp_settings, eleve, trimestres, emails, pdf_content)
+                else:
+                    error_count += 1
+                    errors.append(f'{eleve.prenom} {eleve.nom} : erreur lors de la génération du PDF')
+                    bulletinsEdition.delete()
+                    continue
+                
+                if result['success']:
+                    success_count += 1
+                else:
+                    error_count += 1
+                    errors.append(f'{eleve.prenom} {eleve.nom} : {result["error"]}')
+                
+                # Supprimer l'instance temporaire
+                bulletinsEdition.delete()
+            else:
+                error_count += 1
+                errors.append(f'{eleve.prenom} {eleve.nom} : erreur lors de la génération du bulletin')
+        except Exception as e:
+            error_count += 1
+            errors.append(f'{eleve.prenom} {eleve.nom} : {str(e)}')
+    
+    # Afficher les résultats
+    if success_count > 0:
+        messages.success(request, f'{success_count} bulletin(s) envoyé(s) avec succès.')
+    if error_count > 0:
+        messages.error(request, f'{error_count} erreur(s) lors de l\'envoi.')
+        for error in errors[:10]:  # Limiter à 10 erreurs pour l'affichage
+            messages.error(request, error)
+    
+    info = models.Journal(utilisateur=request.user,
+                         message=f'Envoi de {success_count} bulletin(s) par email')
+    info.save()
+    
+    return redirect('bulletins_admin_select')
+
+def send_bulletin_email(smtp_settings, eleve, trimestres, recipient_emails, pdf_content):
+    """
+    Envoie un bulletin par email.
+    Retourne un dictionnaire avec 'success' (bool) et 'error' (str si échec).
+    """
+    try:
+        # Créer le message email
+        msg = MIMEMultipart()
+        msg['From'] = smtp_settings.from_email or smtp_settings.username
+        msg['To'] = ', '.join(recipient_emails)
+        
+        trimestres_str = ', '.join([t.intitule for t in trimestres])
+        msg['Subject'] = f'Bulletin scolaire - {eleve.prenom} {eleve.nom} - {trimestres_str}'
+        
+        body = f"""
+Bonjour,
+
+Vous trouverez ci-joint le bulletin scolaire de {eleve.prenom} {eleve.nom} pour {trimestres_str}.
+
+Cordialement,
+L'équipe de l'École Mathias Grünewald
+        """
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        
+        # Ajouter le PDF en pièce jointe
+        attachment = MIMEBase('application', 'pdf')
+        attachment.set_payload(pdf_content)
+        encoders.encode_base64(attachment)
+        filename = f"bulletin_{eleve.nom}_{eleve.prenom}_{trimestres_str.replace(' ', '_')}.pdf"
+        attachment.add_header('Content-Disposition', f'attachment; filename="{filename}"')
+        msg.attach(attachment)
+        
+        # Connexion au serveur SMTP
+        if smtp_settings.use_tls:
+            server = smtplib.SMTP(smtp_settings.host, smtp_settings.port)
+            server.starttls()
+        else:
+            server = smtplib.SMTP_SSL(smtp_settings.host, smtp_settings.port)
+        
+        # Authentification
+        if smtp_settings.username and smtp_settings.password:
+            server.login(smtp_settings.username, smtp_settings.password)
+        
+        # Envoi de l'email
+        server.send_message(msg)
+        server.quit()
+        
+        return {'success': True, 'error': None}
+        
+    except smtplib.SMTPAuthenticationError as e:
+        return {'success': False, 'error': f'Erreur d\'authentification : {str(e)}'}
+    except smtplib.SMTPException as e:
+        return {'success': False, 'error': f'Erreur SMTP : {str(e)}'}
+    except Exception as e:
+        return {'success': False, 'error': f'Erreur lors de l\'envoi : {str(e)}'}
+
+def test_smtp_connection(smtp_settings, test_email):
+    """
+    Teste la connexion SMTP et envoie un email de test.
+    Retourne un dictionnaire avec 'success' (bool) et 'error' (str si échec).
+    """
+    if not smtp_settings.is_active:
+        return {'success': False, 'error': 'Les paramètres SMTP ne sont pas activés.'}
+    
+    if not smtp_settings.host or not smtp_settings.port:
+        return {'success': False, 'error': 'Serveur SMTP ou port non configuré.'}
+    
+    try:
+        # Créer le message email
+        msg = MIMEMultipart()
+        msg['From'] = smtp_settings.from_email or smtp_settings.username
+        msg['To'] = test_email
+        msg['Subject'] = 'Test de configuration SMTP - EMG Bulletins'
+        
+        body = f"""
+Bonjour,
+
+Ceci est un email de test pour vérifier la configuration SMTP de l'application EMG Bulletins.
+
+Si vous recevez cet email, cela signifie que la configuration SMTP est correcte et fonctionnelle.
+
+Paramètres utilisés :
+- Serveur : {smtp_settings.host}
+- Port : {smtp_settings.port}
+- TLS : {'Activé' if smtp_settings.use_tls else 'Désactivé'}
+
+Cordialement,
+L'application EMG Bulletins
+        """
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        
+        # Connexion au serveur SMTP
+        if smtp_settings.use_tls:
+            server = smtplib.SMTP(smtp_settings.host, smtp_settings.port)
+            server.starttls()
+        else:
+            server = smtplib.SMTP_SSL(smtp_settings.host, smtp_settings.port)
+        
+        # Authentification
+        if smtp_settings.username and smtp_settings.password:
+            server.login(smtp_settings.username, smtp_settings.password)
+        
+        # Envoi de l'email
+        server.send_message(msg)
+        server.quit()
+        
+        return {'success': True, 'error': None}
+        
+    except smtplib.SMTPAuthenticationError as e:
+        return {'success': False, 'error': f'Erreur d\'authentification : {str(e)}'}
+    except smtplib.SMTPException as e:
+        return {'success': False, 'error': f'Erreur SMTP : {str(e)}'}
+    except Exception as e:
+        return {'success': False, 'error': f'Erreur lors de l\'envoi : {str(e)}'}
 
 def mise_en_page_delete(request,idMiseEnPage):
     mise_en_page = get_object_or_404(models.MiseEnPageBulletin, id=idMiseEnPage)

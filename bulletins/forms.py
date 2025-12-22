@@ -71,6 +71,25 @@ class EleveForm(forms.ModelForm):
         if annee_en_cours :
             self.fields['classe'].queryset=models.Classe.objects.filter(annee=annee_en_cours).order_by('nom')
 
+    def clean_emails_bulletin(self):
+        """
+        Valide que les adresses email sont correctement formatées.
+        """
+        emails = self.cleaned_data.get('emails_bulletin', '')
+        if emails:
+            import re
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            email_list = [email.strip() for email in emails.split(',') if email.strip()]
+            invalid_emails = []
+            for email in email_list:
+                if not re.match(email_pattern, email):
+                    invalid_emails.append(email)
+            if invalid_emails:
+                raise forms.ValidationError(
+                    f'Adresses email invalides : {", ".join(invalid_emails)}'
+                )
+        return emails
+
     class Meta:
         model = models.Eleve
         exclude=['actif',]
@@ -81,6 +100,7 @@ class EleveForm(forms.ModelForm):
             'genre': forms.Select(attrs={'placeholder': 'Genre'}),
             'statut': forms.Select(attrs={'placeholder': 'Statut'}),
             'classe':forms.CheckboxSelectMultiple(),
+            'emails_bulletin': forms.Textarea(attrs={'placeholder': 'email1@exemple.com, email2@exemple.com', 'rows': 3}),
         }
 
 
@@ -536,3 +556,45 @@ class BulletinsEdition(forms.ModelForm):
     class Meta :
         model = models.ListBulletinScolaire
         fields = '__all__'
+
+class SMTPSettingsForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Si on modifie une instance existante, rendre le champ password optionnel
+        if self.instance and self.instance.pk:
+            self.fields['password'].required = False
+            self.fields['password'].help_text = 'Laissez vide pour conserver le mot de passe actuel'
+    
+    def clean_password(self):
+        """
+        Si le champ password est vide et qu'on modifie une instance existante,
+        conserver le mot de passe actuel.
+        """
+        password = self.cleaned_data.get('password')
+        if not password and self.instance and self.instance.pk:
+            # Récupérer le mot de passe actuel depuis la base de données
+            current_instance = models.SMTPSettings.objects.get(pk=self.instance.pk)
+            return current_instance.password
+        return password
+    
+    class Meta:
+        model = models.SMTPSettings
+        fields = '__all__'
+        widgets = {
+            'host': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'smtp.gmail.com'}),
+            'port': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '587'}),
+            'use_tls': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'votre.email@exemple.com'}),
+            'password': forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Mot de passe (laisser vide pour conserver)'}),
+            'from_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'expediteur@exemple.com'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'host': 'Adresse du serveur SMTP (ex: smtp.gmail.com, smtp.office365.com)',
+            'port': 'Port SMTP (587 pour TLS, 465 pour SSL)',
+            'use_tls': 'Cocher pour utiliser TLS, décocher pour SSL',
+            'username': 'Nom d\'utilisateur ou adresse email pour l\'authentification SMTP',
+            'password': 'Mot de passe pour l\'authentification SMTP (laisser vide pour conserver le mot de passe actuel)',
+            'from_email': 'Adresse email utilisée comme expéditeur par défaut',
+            'is_active': 'Activer cette option pour permettre l\'envoi d\'emails via SMTP',
+        }

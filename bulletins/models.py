@@ -82,6 +82,8 @@ class Eleve(models.Model):
     genre = models.fields.CharField(choices=Genre.choices, max_length=5)
     statut = models.fields.CharField(choices=Statut.choices,max_length=10,default=Statut.ELEVE)
     classe = models.ManyToManyField(Classe,blank=True)
+    emails_bulletin = models.TextField(blank=True, null=True, verbose_name='Adresses email pour l\'expédition du bulletin', 
+                                       help_text='Séparez plusieurs adresses par des virgules (ex: email1@exemple.com, email2@exemple.com)')
 
 
     def __str__(self):
@@ -93,6 +95,16 @@ class Eleve(models.Model):
             return "ancien élève"
         else :
             return self.classe.filter(annee=annee_en_cours)[0]
+    
+    def get_emails_bulletin_list(self):
+        """
+        Retourne la liste des adresses email pour l'expédition du bulletin.
+        """
+        if self.emails_bulletin:
+            # Séparer par virgules et nettoyer les espaces
+            emails = [email.strip() for email in self.emails_bulletin.split(',') if email.strip()]
+            return emails
+        return []
 
 class Journal(models.Model):
     message=models.CharField(max_length=50)
@@ -676,3 +688,201 @@ class ListBulletinScolaire(models.Model):
         buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename="bulletinsEMG.pdf")
     #Va créer le bulletin PDF
+    
+    def produceBulletinContent(self):
+        """
+        Génère le PDF du bulletin et retourne le contenu binaire (pour l'envoi par email).
+        """
+        appreciations_eleves,disciplines_eleves=self.returnAppreciations()
+        absencesEleves = self.returnAbsences()
+        avisCollege_eleves=self.returnAvisCollege()
+        stages_eleves=self.returnStage()
+        projets_eleves=self.returnProjet()
+
+        # Create a file-like buffer to receive PDF data.
+        buffer = io.BytesIO()
+        # Create the PDF object, using the buffer as its "file."
+        fichierBulletins = canvas.Canvas(buffer,pagesize=A4)
+        dictParamBulletins={
+            #Valeurs par défaut de police de caractère, taille de police
+                        'font':'Helvetica',
+                        'fontBold' : 'Helvetica-Bold',
+                        'fontSize' : 8,
+                        'largeur_tot_tab_appreciations':20*cm,
+                        'hauteurPage1':24*cm,
+                        'hauteurPage2':27.7*cm,
+                        "piedPageBulletin" : "École Mathias Grünewald - 4 rue Herzog 68124 Logelbach - www.ecole-mathias-grunewald.org",
+                        'couleurAppreciation':'#ebebeb',
+                        'couleurStageProjet': '#ebebeb',
+                        'couleurAvis': '#ebebeb',
+                        'couleurNotice': '#ebebeb',
+                        'largeurIntitule': 20,
+                        'largeurDescriptif':25,
+                        'largeurEvaluation':55,
+                        }
+
+
+        if self.miseEnPage != None :
+            dictParamBulletins['font']=self.miseEnPage.police
+            dictParamBulletins['fontSize']=float(self.miseEnPage.taillePolice)
+            dictParamBulletins['fontBold'] =self.miseEnPage.police + '-Bold'
+            dictParamBulletins['largeur_tot_tab_appreciations']=float(self.miseEnPage.largeurPage1)*cm
+            dictParamBulletins['hauteurPage1'] = float(self.miseEnPage.hauteurPage1)*cm
+            dictParamBulletins['hauteurPage2'] = float(self.miseEnPage.hauteurPage2)*cm
+            dictParamBulletins['couleurAppreciation']=self.miseEnPage.couleurAppreciation
+            dictParamBulletins['couleurStageProjet']=self.miseEnPage.couleurStageProjet
+            dictParamBulletins['couleurAvis']=self.miseEnPage.couleurAvis
+            dictParamBulletins['couleurNotice']=self.miseEnPage.couleurNotice
+            dictParamBulletins['largeurIntitule']=self.miseEnPage.largeurIntitule
+            dictParamBulletins['largeurDescriptif'] = self.miseEnPage.largeurDescriptif
+            dictParamBulletins['largeurEvaluation'] = self.miseEnPage.largeurEvaluation
+            # Ajout des signatures si elles existent
+            try:
+                if self.miseEnPage.signature_directeur_college and self.miseEnPage.signature_directeur_college.name:
+                    dictParamBulletins['signature_college'] = self.miseEnPage.signature_directeur_college.path
+                else:
+                    dictParamBulletins['signature_college'] = None
+            except (ValueError, AttributeError):
+                dictParamBulletins['signature_college'] = None
+            try:
+                if self.miseEnPage.signature_directeur_lycee and self.miseEnPage.signature_directeur_lycee.name:
+                    dictParamBulletins['signature_lycee'] = self.miseEnPage.signature_directeur_lycee.path
+                else:
+                    dictParamBulletins['signature_lycee'] = None
+            except (ValueError, AttributeError):
+                dictParamBulletins['signature_lycee'] = None
+        else:
+            dictParamBulletins['signature_college'] = None
+            dictParamBulletins['signature_lycee'] = None
+
+        for eleve in self.eleves.all() :
+            for trimestre in self.trimestres.all():
+                disciplines=disciplines_eleves.filter(trimestre=trimestre)
+                appreciations=appreciations_eleves.filter(eleve=eleve).filter(discipline__in=disciplines)
+                stages=stages_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
+                projets=projets_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
+                avisCollege=avisCollege_eleves.filter(trimestre=trimestre).filter(eleve=eleve).first()
+                if not absencesEleves.filter(trimestre=trimestre).filter(eleve=eleve).exists() :
+                    absenceEleve=Absence(eleve=eleve,trimestre=trimestre)
+                else :
+                    absenceEleve=absencesEleves.filter(trimestre=trimestre).get(eleve=eleve)
+                #génération de l'en tête du bulletin
+                pdf.enTete(eleve,trimestre,fichierBulletins,dictParamBulletins)
+                if self.bulletinVersionProvisoire :
+                    pdf.versionProvisoire(fichierBulletins)
+
+                frameAppreciations = Frame(x1=0.5 * cm, y1=1 * cm, width=dictParamBulletins['largeur_tot_tab_appreciations'], height=dictParamBulletins['hauteurPage1'], showBoundary=0,
+                                           leftPadding=0,
+                                           topPadding=0, rightPadding=0, bottomPadding=0)
+                story_page1=[]
+                story_page2 = []
+                pdf.ligneEnTeteAppreciation(story_page1,dictParamBulletins)
+                numAppreciation=0
+                for appreciation in appreciations:
+                    competences = CompetencesAppreciations.objects.filter(appreciation=appreciation)
+                    if appreciation.commentaire is not None and len(appreciation.commentaire) > 0 :
+                        pdf.creerBulletinAppreciations(appreciation,competences,fichierBulletins,dictParamBulletins,story_page1,self.bulletinUtilisationCompetence,numAppreciation)
+                    numAppreciation+=1
+
+                if stages.exists() or projets.exists():
+                    pdf.espace(story_page1,0.5)
+                    pdf.stagesProjets(stages,projets,dictParamBulletins,story_page1)
+                if avisCollege != None and self.bulletinAvisCollege :
+                    pdf.espace(story_page1,0.5)
+                    pdf.avisCollege(avisCollege,dictParamBulletins, story_page1)
+
+                pdf.espace(story_page1)
+                pdf.absenceEtVisa(story_page1,absenceEleve,dictParamBulletins,self.signatureBulletin,self.bulletinAbsencesRetards)
+
+                notice = Bareme.objects.filter(defaut=True).first()
+                if self.bulletinNotice :
+                    pdf.noticeBulletin(story_page1,dictParamBulletins,notice)
+
+                page1_full = False
+
+
+
+                fichierBulletins.setFont(dictParamBulletins['font'], size=dictParamBulletins['fontSize'] * 0.8)
+                if notice != None :
+                    fichierBulletins.drawCentredString(10.5 * cm, 0.5 * cm, notice.piedPage)
+                else :
+                    fichierBulletins.drawCentredString(10.5 * cm, 0.5 * cm,dictParamBulletins['piedPageBulletin'])
+
+                compteur=0
+                for p in story_page1:
+                    if page1_full == False :
+                        compteur+=1
+                        if frameAppreciations.add(p,fichierBulletins) == 0 :
+                            page1_full = True
+                            fichierBulletins.setFont(dictParamBulletins['font'],
+                                                     size=dictParamBulletins['fontSize'] * 0.8)
+                            if notice != None:
+                                fichierBulletins.drawCentredString(10.5 * cm, 0.5 * cm, notice.piedPage)
+                            else:
+                                fichierBulletins.drawCentredString(10.5 * cm, 0.5 * cm,dictParamBulletins['piedPageBulletin'])
+                            story_page2.append(p)
+                    else :
+                        story_page2.append(p)
+
+
+                #Frame saturée mais il reste des éléments dans la liste...
+                if story_page2 != []:
+                    fichierBulletins.drawString(20 * cm, 0.5 * cm, "1/2")
+                    fichierBulletins.showPage()
+                    frameAppreciations_page2 = Frame(x1=0.5 * cm, y1=1 * cm, width=dictParamBulletins['largeur_tot_tab_appreciations'], height=dictParamBulletins['hauteurPage2'], showBoundary=0,
+                                               leftPadding=0,
+                                               topPadding=0, rightPadding=0, bottomPadding=0)
+                    if self.bulletinVersionProvisoire:
+                        pdf.versionProvisoire(fichierBulletins)
+                    if compteur <= (numAppreciation+1) :
+                        enTete=[]
+                        pdf.ligneEnTeteAppreciation(enTete, dictParamBulletins)
+                        frameAppreciations_page2.add(enTete[0],fichierBulletins)
+                    frameAppreciations_page2.addFromList(story_page2,fichierBulletins)
+                    fichierBulletins.setFont(dictParamBulletins['font'], size=dictParamBulletins['fontSize'])
+                    fichierBulletins.drawString(20 * cm, 0.5 * cm, "2/2")
+                    fichierBulletins.setFont(dictParamBulletins['font'], size=dictParamBulletins['fontSize'] * 0.8)
+                    fichierBulletins.drawString(6.5 * cm, 0.5 * cm,dictParamBulletins['piedPageBulletin'])
+                fichierBulletins.showPage()
+
+
+        fichierBulletins.save()
+
+        buffer.seek(0)
+        return buffer.getvalue()
+
+class SMTPSettings(models.Model):
+    """
+    Modèle singleton pour stocker les paramètres SMTP.
+    Une seule instance doit exister dans la base de données.
+    """
+    host = models.CharField(max_length=255, blank=True, null=True, verbose_name='Serveur SMTP', help_text='Ex: smtp.gmail.com')
+    port = models.PositiveIntegerField(default=587, blank=True, null=True, verbose_name='Port', help_text='Port SMTP (587 pour TLS, 465 pour SSL)')
+    use_tls = models.BooleanField(default=True, verbose_name='Utiliser TLS', help_text='Cocher pour TLS, décocher pour SSL')
+    username = models.CharField(max_length=255, blank=True, null=True, verbose_name='Nom d\'utilisateur', help_text='Email ou nom d\'utilisateur SMTP')
+    password = models.CharField(max_length=255, blank=True, null=True, verbose_name='Mot de passe', help_text='Mot de passe SMTP')
+    from_email = models.EmailField(max_length=255, blank=True, null=True, verbose_name='Email expéditeur', help_text='Adresse email utilisée comme expéditeur par défaut')
+    is_active = models.BooleanField(default=False, verbose_name='Activer l\'envoi d\'emails', help_text='Cocher pour activer l\'envoi d\'emails via SMTP')
+    
+    class Meta:
+        verbose_name = 'Paramètres SMTP'
+        verbose_name_plural = 'Paramètres SMTP'
+    
+    def __str__(self):
+        return f'SMTP: {self.host}:{self.port}'
+    
+    def save(self, *args, **kwargs):
+        """
+        S'assure qu'il n'y a qu'une seule instance de SMTPSettings.
+        """
+        self.pk = 1
+        super().save(*args, **kwargs)
+    
+    @classmethod
+    def get_settings(cls):
+        """
+        Récupère l'instance unique des paramètres SMTP.
+        Crée une instance par défaut si elle n'existe pas.
+        """
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
