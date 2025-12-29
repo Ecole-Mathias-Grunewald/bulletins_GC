@@ -118,49 +118,69 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const disciplinesList = document.getElementById('disciplines-list');
-    if (!disciplinesList) return;
+    if (!disciplinesList) {
+        console.error('Element disciplines-list not found');
+        return;
+    }
 
     function updateOrdreValues() {
-        const items = disciplinesList.querySelectorAll('[data-discipline-id]');
+        const items = Array.from(disciplinesList.querySelectorAll('[data-discipline-id]'));
         items.forEach((item, index) => {
             const ordreInput = item.querySelector('.ordre-input');
             const ordreValue = item.querySelector('.ordre-value');
-            if (ordreInput && ordreValue) {
+            if (ordreInput) {
                 ordreInput.value = index;
+            }
+            if (ordreValue) {
                 ordreValue.textContent = index;
             }
         });
     }
 
     function moveItem(item, direction) {
-        const parent = item.parentElement;
         if (direction === 'up') {
             const prev = item.previousElementSibling;
             if (prev) {
-                parent.insertBefore(item, prev);
+                disciplinesList.insertBefore(item, prev);
                 updateOrdreValues();
             }
         } else if (direction === 'down') {
             const next = item.nextElementSibling;
             if (next) {
-                parent.insertBefore(next, item);
+                disciplinesList.insertBefore(next, item);
                 updateOrdreValues();
             }
         }
     }
 
+    // Utiliser la délégation d'événements pour gérer les clics
     disciplinesList.addEventListener('click', function(e) {
-        const btn = e.target.closest('.move-up, .move-down');
-        if (!btn) return;
+        // Trouver le bouton, même si on clique sur l'icône
+        let btn = e.target;
+        while (btn && btn !== disciplinesList) {
+            if (btn.classList && (btn.classList.contains('move-up') || btn.classList.contains('move-down'))) {
+                break;
+            }
+            btn = btn.parentElement;
+        }
+        
+        if (!btn || btn === disciplinesList) {
+            return;
+        }
         
         const item = btn.closest('[data-discipline-id]');
-        if (!item) return;
+        if (!item) {
+            return;
+        }
+        
+        e.preventDefault();
+        e.stopPropagation();
         
         const direction = btn.classList.contains('move-up') ? 'up' : 'down';
         moveItem(item, direction);
     });
 
-    // Initialiser les valeurs d'ordre
+    // Initialiser les valeurs d'ordre au chargement
     updateOrdreValues();
 });
 </script>
