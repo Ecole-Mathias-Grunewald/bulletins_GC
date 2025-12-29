@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load bulletins_extras %}
+{% block breadcrumb%}
+<li class="breadcrumb-item"><a href="{% url 'home' %}" class="link-secondary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">Accueil</a></li>
+<li class="breadcrumb-item active" aria-current="page" class="text-secondary">Ordre des disciplines</li>
+{% endblock breadcrumb%}
+{% block content %}
+<div class="container-fluid container-md mt-4">
+    <div class="row">
+        <div class="col-12 col-lg-11 col-xl-10">
+            <h1 class="mb-4">Ordre d'affichage des disciplines dans les bulletins</h1>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-4" role="alert">
+                        {% if message.tags == 'success' %}<i class="bi bi-check-circle"></i>
+                        {% elif message.tags == 'error' %}<i class="bi bi-exclamation-triangle"></i>
+                        {% else %}<i class="bi bi-info-circle"></i>{% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle"></i> Sélectionnez une classe et un trimestre pour gérer l'ordre d'affichage des disciplines dans les bulletins.
+            </div>
+
+            <form method="post" action="" class="mb-4">
+                {% csrf_token %}
+                <fieldset class="rounded shadow p-4">
+                    <h2 class="fs-4 pb-2">Sélection</h2>
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="{{ form.classe.id_for_label }}" class="form-label">{{ form.classe.label }}</label>
+                            {{ form.classe|add_classes:'form-select' }}
+                            {% if form.classe.errors %}
+                                <div class="text-danger small">{{ form.classe.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="{{ form.trimestre.id_for_label }}" class="form-label">{{ form.trimestre.label }}</label>
+                            {{ form.trimestre|add_classes:'form-select' }}
+                            {% if form.trimestre.errors %}
+                                <div class="text-danger small">{{ form.trimestre.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary shadow">
+                            <i class="bi bi-search"></i> Afficher les disciplines
+                        </button>
+                    </div>
+                </fieldset>
+            </form>
+
+            {% if disciplines %}
+            <form method="post" action="" id="ordre-form">
+                {% csrf_token %}
+                <input type="hidden" name="save_ordre" value="1">
+                <input type="hidden" name="classe_id" value="{{ classe_selected.id }}">
+                <input type="hidden" name="trimestre_id" value="{{ trimestre_selected.id }}">
+                
+                <fieldset class="rounded shadow p-4">
+                    <h2 class="fs-4 pb-2">
+                        Disciplines pour {{ classe_selected.nom }}e classe - {{ trimestre_selected.intitule }}
+                    </h2>
+                    
+                    <div class="alert alert-warning" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> Utilisez les flèches pour modifier l'ordre, puis cliquez sur "Enregistrer l'ordre".
+                    </div>
+
+                    <div id="disciplines-list" class="list-group">
+                        {% for discipline in disciplines %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center" data-discipline-id="{{ discipline.id }}">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <div class="me-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary move-up" title="Déplacer vers le haut">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary move-down" title="Déplacer vers le bas">
+                                        <i class="bi bi-arrow-down"></i>
+                                    </button>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <strong>{{ discipline.intitule }}</strong>
+                                    {% if discipline.intitule_court %}
+                                        <span class="text-muted">({{ discipline.intitule_court }})</span>
+                                    {% endif %}
+                                    <br>
+                                    <small class="text-muted">
+                                        Ordre actuel: <span class="ordre-value">{{ discipline.ordre }}</span>
+                                    </small>
+                                </div>
+                            </div>
+                            <input type="hidden" name="discipline_id[]" value="{{ discipline.id }}">
+                            <input type="hidden" name="ordre[]" value="{{ discipline.ordre }}" class="ordre-input">
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn bg-teal shadow">
+                            <i class="bi bi-save"></i> Enregistrer l'ordre
+                        </button>
+                    </div>
+                </fieldset>
+            </form>
+            {% elif classe_selected and trimestre_selected %}
+            <div class="alert alert-warning" role="alert">
+                <i class="bi bi-exclamation-triangle"></i> Aucune discipline trouvée pour {{ classe_selected.nom }}e classe et {{ trimestre_selected.intitule }}.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const disciplinesList = document.getElementById('disciplines-list');
+    if (!disciplinesList) return;
+
+    function updateOrdreValues() {
+        const items = disciplinesList.querySelectorAll('[data-discipline-id]');
+        items.forEach((item, index) => {
+            const ordreInput = item.querySelector('.ordre-input');
+            const ordreValue = item.querySelector('.ordre-value');
+            if (ordreInput && ordreValue) {
+                ordreInput.value = index;
+                ordreValue.textContent = index;
+            }
+        });
+    }
+
+    function moveItem(item, direction) {
+        const parent = item.parentElement;
+        if (direction === 'up') {
+            const prev = item.previousElementSibling;
+            if (prev) {
+                parent.insertBefore(item, prev);
+                updateOrdreValues();
+            }
+        } else if (direction === 'down') {
+            const next = item.nextElementSibling;
+            if (next) {
+                parent.insertBefore(next, item);
+                updateOrdreValues();
+            }
+        }
+    }
+
+    disciplinesList.addEventListener('click', function(e) {
+        const btn = e.target.closest('.move-up, .move-down');
+        if (!btn) return;
+        
+        const item = btn.closest('[data-discipline-id]');
+        if (!item) return;
+        
+        const direction = btn.classList.contains('move-up') ? 'up' : 'down';
+        moveItem(item, direction);
+    });
+
+    // Initialiser les valeurs d'ordre
+    updateOrdreValues();
+});
+</script>
+{% endblock content %}
+

@@ -218,7 +218,7 @@ class MyDisciplineChangeForm(forms.ModelForm):
 
     #Une discipline déjà créée ne peut pas changer de classe ou de trimestre
 
-    def __init__(self,*args,user=None,**kwargs):
+    def __init__(self,*args,user=None,is_admin=False,**kwargs):
         super().__init__(*args,**kwargs)
         Model = get_user_model()
         if user :
@@ -228,6 +228,11 @@ class MyDisciplineChangeForm(forms.ModelForm):
         else :
             self.fields['enseigneePar'].queryset=Model.objects.exclude(is_active=False).exclude(role='INFO').order_by('last_name')
             self.fields['reluPar'].queryset = Model.objects.exclude(is_active=False).exclude(role='INFO').order_by('last_name')
+        
+        # Masquer le champ ordre si l'utilisateur n'est pas admin
+        if not is_admin:
+            if 'ordre' in self.fields:
+                del self.fields['ordre']
 
 
 
@@ -243,6 +248,7 @@ class MyDisciplineChangeForm(forms.ModelForm):
             'dateDebut':forms.DateInput(attrs={'placeholder': 'Date de début'}),
             'dateFin': forms.DateInput(attrs={'placeholder': 'Date de fin'}),
             'volumeHoraire': forms.NumberInput(attrs={'placeholder': 'Volume Horaire'}),
+            'ordre': forms.NumberInput(attrs={'placeholder': 'Ordre d\'affichage', 'min': '0'}),
             'moyenne':forms.NumberInput(attrs={'readonly': True})
         }
 
@@ -280,7 +286,7 @@ class MyDisciplineForm(forms.ModelForm):
         label="Initialiser Attitude et Engagement à B",
     )
 
-    def __init__(self,*args,user=None,trimestre=None,**kwargs):
+    def __init__(self,*args,user=None,trimestre=None,is_admin=False,**kwargs):
         super().__init__(*args,**kwargs)
         if user :
             Model = get_user_model()
@@ -292,6 +298,11 @@ class MyDisciplineForm(forms.ModelForm):
             self.fields['trimestre'].queryset = models.Trimestre.objects.exclude(edition=False).filter(annee=annee_en_cours)
         if trimestre :
             self.fields['trimestre']=trimestre
+        
+        # Masquer le champ ordre si l'utilisateur n'est pas admin
+        if not is_admin:
+            if 'ordre' in self.fields:
+                del self.fields['ordre']
 
     class Meta:
         model = models.Discipline
@@ -304,6 +315,7 @@ class MyDisciplineForm(forms.ModelForm):
             'dateDebut':forms.DateInput(attrs={'placeholder': 'Date de début'}),
             'dateFin': forms.DateInput(attrs={'placeholder': 'Date de fin'}),
             'volumeHoraire': forms.NumberInput(attrs={'placeholder': 'Volume Horaire'}),
+            'ordre': forms.NumberInput(attrs={'placeholder': 'Ordre d\'affichage', 'min': '0'}),
             'enseigneeDans': forms.CheckboxSelectMultiple(),
             'trimestre':forms.Select(attrs={'placeholder': 'Trimestre'}),
         }
@@ -561,6 +573,28 @@ class BulletinsEdition(forms.ModelForm):
     class Meta :
         model = models.ListBulletinScolaire
         fields = '__all__'
+
+class OrdreDisciplinesForm(forms.Form):
+    """Formulaire pour sélectionner la classe et le trimestre"""
+    classe = forms.ModelChoiceField(
+        queryset=models.Classe.objects.none(),
+        required=True,
+        label='Classe',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    trimestre = forms.ModelChoiceField(
+        queryset=models.Trimestre.objects.none(),
+        required=True,
+        label='Trimestre',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        annee_en_cours = models.Annee.objects.filter(is_active=True).first()
+        if annee_en_cours:
+            self.fields['classe'].queryset = models.Classe.objects.filter(annee=annee_en_cours).order_by('nom')
+            self.fields['trimestre'].queryset = models.Trimestre.objects.filter(annee=annee_en_cours).filter(edition=True).order_by('dateDebut')
 
 class SMTPSettingsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):

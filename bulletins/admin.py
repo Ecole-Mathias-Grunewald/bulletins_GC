@@ -16,7 +16,8 @@ class AppreciationAdmin(admin.ModelAdmin):
     list_display = ('eleve','discipline')
 
 class DisciplineAdmin(admin.ModelAdmin):
-    list_display = ('intitule','show_enseignants','show_classes','dateDebut','dateFin','trimestre','reluPar','relectureActive','correctionsAValider')
+    list_display = ('intitule','show_enseignants','show_classes','dateDebut','dateFin','trimestre','reluPar','relectureActive','correctionsAValider','ordre')
+    list_editable = ('ordre',)
 
 class CompetencesConnaissancesAdmin(admin.ModelAdmin):
     list_display = ('id','intitule','discipline')

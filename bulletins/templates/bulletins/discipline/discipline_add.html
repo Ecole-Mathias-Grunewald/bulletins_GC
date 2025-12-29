@@ -107,7 +107,17 @@
                                 {{ form.typeEnseignement|add_classes:'form-select'}}
                                 <label for="{{form.typeEnseignement.id_for_label}}">Type d'enseignement</label>
                             </div>
-            
+
+                            {% if user.role == 'ADMIN' and form.ordre %}
+                            <div class="form-floating mt-3">
+                                {{ form.ordre|add_classes:'form-control'}}
+                                <label for="{{form.ordre.id_for_label}}">{{ form.ordre.label }}</label>
+                                {% if form.ordre.help_text %}
+                                    <small class="form-text text-muted">{{ form.ordre.help_text }}</small>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
                             <div class="form-floating mt-3">
                                 {{ form.dateDebut|add_classes:'form-control'}}
                                 <label for="{{form.dateDebut.id_for_label}}">A démarré le...</label>

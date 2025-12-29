@@ -765,8 +765,9 @@ def disciplineEleve_detail(request,idDiscipline):
 @permission_required('bulletins.add_discipline')
 def discipline_add(request):
     annee_en_cours = models.Annee.objects.filter(is_active=True)[0]
+    is_admin = request.user.role == 'ADMIN'
     if request.method=='POST':
-        form=forms.MyDisciplineForm(request.POST)
+        form=forms.MyDisciplineForm(request.POST, user=request.user.username, is_admin=is_admin)
         if form.is_valid():
             # Récupérer la valeur du champ initialiser_evaluations avant de sauvegarder
             initialiser_evaluations = form.cleaned_data.get('initialiser_evaluations', False)
@@ -789,7 +790,7 @@ def discipline_add(request):
             return redirect('my_disciplines_liste')
         else :
             return render(request, 'bulletins/discipline/discipline_add.html', context={'form':form})
-    form = forms.MyDisciplineForm(user=request.user.username)
+    form = forms.MyDisciplineForm(user=request.user.username, is_admin=is_admin)
     return render(request,'bulletins/discipline/discipline_add.html',context={'form':form,'annee_en_cours':annee_en_cours})
 
 @login_required
@@ -809,7 +810,8 @@ def discipline_change(request,idDiscipline):
 
         if 'edit_discipline' in request.POST :
             if 'admin' in request.path:
-                form = forms.MyDisciplineChangeForm(request.POST, instance=discipline)
+                is_admin = request.user.role == 'ADMIN'
+                form = forms.MyDisciplineChangeForm(request.POST, instance=discipline, is_admin=is_admin)
                 if form.is_valid():
                     discipline = form.save()
                     info = models.Journal(utilisateur=request.user,
@@ -817,7 +819,7 @@ def discipline_change(request,idDiscipline):
                     info.save()
                 return redirect('discipline_admin_change', idDiscipline)
             else :
-                form = forms.MyDisciplineChangeForm(request.POST, instance=discipline, user=request.user.username)
+                form = forms.MyDisciplineChangeForm(request.POST, instance=discipline, user=request.user.username, is_admin=False)
                 if form.is_valid():
                     discipline = form.save()
                     discipline.enseigneePar.add(request.user)
@@ -828,9 +830,10 @@ def discipline_change(request,idDiscipline):
     else :
         formComp = forms.CompetencesConnaissancesForm()
         if 'admin' in request.path:
-            form = forms.MyDisciplineChangeForm(instance=discipline)
+            is_admin = request.user.role == 'ADMIN'
+            form = forms.MyDisciplineChangeForm(instance=discipline, is_admin=is_admin)
         else :
-            form = forms.MyDisciplineChangeForm(user=request.user.username, instance=discipline)
+            form = forms.MyDisciplineChangeForm(user=request.user.username, instance=discipline, is_admin=False)
         return render(request, 'bulletins/discipline/discipline_change.html', context={'form': form,'formComp': formComp,'discipline':discipline,'annee_en_cours':annee_en_cours,'competences':competences})
 
 
@@ -2138,6 +2141,69 @@ def mise_en_page_delete(request,idMiseEnPage):
     return redirect('mise_en_page_list')
 
 @login_required
+@login_required
+def ordre_disciplines(request):
+    """Page pour gérer l'ordre d'affichage des disciplines dans les bulletins"""
+    # Vérifier que l'utilisateur est administrateur
+    if not request.user.is_authenticated or request.user.role != 'ADMIN':
+        return redirect('home')
+    
+    annee_en_cours = models.Annee.objects.filter(is_active=True).first()
+    form = forms.OrdreDisciplinesForm()
+    disciplines = []
+    classe_selected = None
+    trimestre_selected = None
+    
+    if request.method == 'POST':
+        if 'save_ordre' in request.POST:
+            # Sauvegarder l'ordre des disciplines
+            ordres = request.POST.getlist('ordre[]')
+            discipline_ids = request.POST.getlist('discipline_id[]')
+            
+            for i, discipline_id in enumerate(discipline_ids):
+                try:
+                    discipline = models.Discipline.objects.get(id=discipline_id)
+                    discipline.ordre = int(ordres[i]) if ordres[i] else 0
+                    discipline.save()
+                except (models.Discipline.DoesNotExist, ValueError):
+                    continue
+            
+            messages.success(request, 'Ordre des disciplines enregistré avec succès.')
+            # Recharger les données avec les mêmes paramètres
+            classe_id = request.POST.get('classe_id')
+            trimestre_id = request.POST.get('trimestre_id')
+            if classe_id and trimestre_id:
+                form = forms.OrdreDisciplinesForm(initial={
+                    'classe': classe_id,
+                    'trimestre': trimestre_id
+                })
+                classe_selected = models.Classe.objects.get(id=classe_id)
+                trimestre_selected = models.Trimestre.objects.get(id=trimestre_id)
+                disciplines = models.Discipline.objects.filter(
+                    enseigneeDans=classe_selected,
+                    trimestre=trimestre_selected,
+                    presentBulletin=True
+                ).order_by('ordre', 'intitule')
+        else:
+            # Formulaire de sélection classe/trimestre
+            form = forms.OrdreDisciplinesForm(request.POST)
+            if form.is_valid():
+                classe_selected = form.cleaned_data['classe']
+                trimestre_selected = form.cleaned_data['trimestre']
+                disciplines = models.Discipline.objects.filter(
+                    enseigneeDans=classe_selected,
+                    trimestre=trimestre_selected,
+                    presentBulletin=True
+                ).order_by('ordre', 'intitule')
+    
+    return render(request, 'bulletins/ordre/ordre_disciplines.html', {
+        'form': form,
+        'disciplines': disciplines,
+        'classe_selected': classe_selected,
+        'trimestre_selected': trimestre_selected,
+        'annee_en_cours': annee_en_cours
+    })
+
 def correcteur_orthographe(request):
     """API pour la correction orthographique via LanguageTool"""
     if request.method != 'POST':

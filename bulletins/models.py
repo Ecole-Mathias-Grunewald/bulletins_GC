@@ -344,6 +344,8 @@ class Discipline(models.Model):
     presentBulletin = models.BooleanField(default=True,verbose_name='intégrer au bulletin')
     activerMoyenne = models.BooleanField(default=True,verbose_name='afficher la moyenne')
     correctionsAValider = models.BooleanField(default=False, verbose_name='corrections à valider')
+    ordre = models.PositiveIntegerField(default=0, verbose_name='Ordre d\'affichage dans le bulletin', 
+                                         help_text='Définit l\'ordre d\'affichage des enseignements dans le bulletin (0 = premier, plus le nombre est élevé, plus l\'enseignement apparaît tard)')
 
     def __str__(self):
         return f'{self.intitule}'
@@ -516,7 +518,7 @@ class ListBulletinScolaire(models.Model):
     #va retourner les absences et les retards pour le trimestre condisdéré
 
     def returnAppreciations(self):
-        disciplines = Discipline.objects.filter(trimestre__in=self.trimestres.all()).filter(presentBulletin=True)
+        disciplines = Discipline.objects.filter(trimestre__in=self.trimestres.all()).filter(presentBulletin=True).order_by('ordre', 'intitule')
         return Appreciation.objects.filter(eleve__in=self.eleves.all()).filter(discipline__in=disciplines),disciplines
 
 
@@ -594,8 +596,8 @@ class ListBulletinScolaire(models.Model):
 
         for eleve in self.eleves.all() :
             for trimestre in self.trimestres.all():
-                disciplines=disciplines_eleves.filter(trimestre=trimestre)
-                appreciations=appreciations_eleves.filter(eleve=eleve).filter(discipline__in=disciplines)
+                disciplines=disciplines_eleves.filter(trimestre=trimestre).order_by('ordre', 'intitule')
+                appreciations=appreciations_eleves.filter(eleve=eleve).filter(discipline__in=disciplines).order_by('discipline__ordre', 'discipline__intitule')
                 stages=stages_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
                 projets=projets_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
                 avisCollege=avisCollege_eleves.filter(trimestre=trimestre).filter(eleve=eleve).first()
@@ -757,8 +759,8 @@ class ListBulletinScolaire(models.Model):
 
         for eleve in self.eleves.all() :
             for trimestre in self.trimestres.all():
-                disciplines=disciplines_eleves.filter(trimestre=trimestre)
-                appreciations=appreciations_eleves.filter(eleve=eleve).filter(discipline__in=disciplines)
+                disciplines=disciplines_eleves.filter(trimestre=trimestre).order_by('ordre', 'intitule')
+                appreciations=appreciations_eleves.filter(eleve=eleve).filter(discipline__in=disciplines).order_by('discipline__ordre', 'discipline__intitule')
                 stages=stages_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
                 projets=projets_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
                 avisCollege=avisCollege_eleves.filter(trimestre=trimestre).filter(eleve=eleve).first()

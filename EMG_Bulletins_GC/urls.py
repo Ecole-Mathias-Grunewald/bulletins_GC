@@ -205,6 +205,9 @@ urlpatterns = [
     #Paramètres SMTP
     path('smtp/settings/',bulletins.views.smtp_settings,name='smtp_settings'),
     
+    #Ordre des disciplines
+    path('ordre/disciplines/',bulletins.views.ordre_disciplines,name='ordre_disciplines'),
+    
     #Correcteur orthographique
     path('api/correcteur/',bulletins.views.correcteur_orthographe,name='correcteur_orthographe'),
 ]

@@ -61,6 +61,16 @@
                             <label for="{{form.volumeHoraire.id_for_label}}">Volume horaire (en h)</label>
                         </div>
 
+                        {% if user.role == 'ADMIN' and form.ordre %}
+                        <div class="form-floating mt-3">
+                            {{ form.ordre|add_classes:'form-control'}}
+                            <label for="{{form.ordre.id_for_label}}">{{ form.ordre.label }}</label>
+                            {% if form.ordre.help_text %}
+                                <small class="form-text text-muted">{{ form.ordre.help_text }}</small>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
                         <div class="row">
                             <div class="col-6">
                             
