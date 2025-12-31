@@ -140,6 +140,16 @@ urlpatterns = [
     path('avisCollege/admin/<int:idAvis>/change', bulletins.views.avis_college_change, name='avis_college_admin_change'),
     path('avisCollege/admin/<int:idAvis>/delete', bulletins.views.avis_college_delete, name='avis_college_admin_delete'),
 
+    #AvantPropos
+    path('avantPropos/add', bulletins.views.avant_propos_add,name='avant_propos_add'),
+    path('avantPropos/<int:idAvantPropos>/delete',bulletins.views.avant_propos_delete,name='avant_propos_delete'),
+    path('avantPropos/<int:idAvantPropos>/change',bulletins.views.avant_propos_change,name='avant_propos_change'),
+    path('avantPropos/',bulletins.views.avant_propos_list,name='avant_propos_liste'),
+    #AvantPropos (supervision)
+    path('avantPropos/admin/', bulletins.views.avant_propos_admin_list, name='avant_propos_admin_liste'),
+    path('avantPropos/admin/<int:idAvantPropos>/change', bulletins.views.avant_propos_change, name='avant_propos_admin_change'),
+    path('avantPropos/admin/<int:idAvantPropos>/delete', bulletins.views.avant_propos_delete, name='avant_propos_admin_delete'),
+
     #Gestion projets
     path('projets/',bulletins.views.projets_list,name='projets_liste'),
     path('my_projets/', bulletins.views.my_projets_list, name='my_projets_liste'),

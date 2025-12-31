@@ -37,6 +37,7 @@
                                 <div class="list-group list-group-flush">
                                         <a href="{% url 'absences_retards' %}" class="list-group-item list-group-item-action bg-light-subtle"><i class="bi bi-calendar-check text-primary"></i> Absences & retards</a>
                                         <a href="{% url 'avis_college_liste' %}" class="list-group-item list-group-item-action bg-light-subtle"><i class="bi bi-person text-primary"></i> Avis trimestriels{% if avis %}<span class="badge bg-primary rounded-pill ms-2">{{avis|length}}</span>{% endif %}</a>
+                                        <a href="{% url 'avant_propos_liste' %}" class="list-group-item list-group-item-action bg-light-subtle"><i class="bi bi-file-text text-primary"></i> Avant propos{% if avant_propos %}<span class="badge bg-primary rounded-pill ms-2">{{avant_propos|length}}</span>{% endif %}</a>
                                 </div>
                             </fieldset>
                     </div>

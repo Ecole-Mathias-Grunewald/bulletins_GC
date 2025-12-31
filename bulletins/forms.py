@@ -64,6 +64,36 @@ class AvisCollegeForm(forms.ModelForm):
             'avis':forms.Textarea(attrs={'placeholder': 'Avis du collège','style':'height: 150px'}),
         }
 
+class AvantProposAddForm(forms.ModelForm):
+    def __init__(self, *args, user=None,**kwargs):
+        super().__init__(*args, **kwargs)
+        annee_en_cours = models.Annee.objects.filter(is_active=True).first()
+        if annee_en_cours:
+            self.fields['trimestre'].queryset = models.Trimestre.objects.exclude(edition=False).filter(annee=annee_en_cours)
+            if user:
+                # Filtrer les classes où l'utilisateur est tuteur
+                classes=models.Classe.objects.filter(tuteur=user).filter(annee=annee_en_cours)
+            else : 
+                classes = models.Classe.objects.filter(annee=annee_en_cours)
+            self.fields['eleve'].queryset = models.Eleve.objects.filter(classe__in=classes).order_by('nom', 'prenom')
+
+    class Meta:
+        model = models.AvantPropos
+        fields=['contenu','eleve','trimestre']
+        widgets={
+            'trimestre':forms.Select(attrs={'placeholder': 'Trimestre'}),
+            'eleve': forms.Select(attrs={'placeholder': 'Élève'}),
+            'contenu': forms.Textarea(attrs={'placeholder': 'Avant propos', 'style': 'height: 200px'}),
+        }
+
+class AvantProposForm(forms.ModelForm):
+    class Meta :
+        model = models.AvantPropos
+        exclude=['eleve','trimestre', 'cree_par', 'modifie_par', 'date_creation', 'date_modification']
+        widgets={
+            'contenu':forms.Textarea(attrs={'placeholder': 'Avant propos','style':'height: 150px'}),
+        }
+
 class EleveForm(forms.ModelForm):
 
     def __init__(self,*args,annee_en_cours=None,**kwargs):
@@ -513,6 +543,8 @@ class MiseEnPageBulletinForm(forms.ModelForm):
                 attrs={'placeholder': 'Couleur des stages et projets', 'type': 'color'}),
             'couleurAvis': forms.NumberInput(
                 attrs={'placeholder': 'Couleur des avis du collège', 'type': 'color'}),
+            'couleurAvantPropos': forms.NumberInput(
+                attrs={'placeholder': 'Couleur de l\'avant propos', 'type': 'color'}),
             'couleurNotice': forms.NumberInput(
                 attrs={'placeholder': 'Couleur de la notice', 'type': 'color'}),
             'hauteurPage1': forms.NumberInput(attrs={'placeholder': 'Hauteur page 1 (cm)'}),

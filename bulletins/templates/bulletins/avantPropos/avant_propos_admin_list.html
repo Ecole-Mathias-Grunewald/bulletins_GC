@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block breadcrumb%}
+<li class="breadcrumb-item"><a href="{% url 'home' %}" class="link-secondary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">Accueil</a></li>
+<li class="breadcrumb-item active" aria-current="page" class="text-secondary">Avant propos (admin)</li>
+{% endblock breadcrumb%}
+{% block content %}
+<div class="container-fluid container-md">
+    <div class="row">
+        <div class="col-12 mt-4">
+                <h1 class="mb-2">Avant propos (admin) {{annee_en_cours}}</h1>
+                
+                <div class="row mb-2">
+                    <div class="col-12 col-sm-6 col-md-5 col-lg-4">
+                        <div>
+                            <input type="text" name="intitule" placeholder="Filtrer" maxlength="60" class="form-control" id="customSearch">
+                        </div>
+                    </div>
+                </div>
+                <table id="table" 
+                    style="border-color:transparent;"
+                    data-toggle="table"
+                    data-search="true"
+                    data-search-selector="#customSearch"
+                    data-maintain-meta-data="true"
+                    data-height="600"
+                    data-pagination="true"
+                    data-page-list="[10, 25, 50, 100]"
+                    data-page-size="25"
+                    data-locale="fr-FR"
+                    >
+                    <thead>
+                    <tr>
+                        <th data-field="eleve" data-sortable="true" scope="col">Élève</th>
+                        <th data-field="classe" data-sortable="true"  class="text-center" scope="col">Classe</th>
+                        <th data-field="trimestre" data-sortable="true"  scope="col">Trimestre</th>
+                        <th data-field="modifier" data-sortable="true" scope="col" ></th>
+                        <th data-field="supprimer" data-sortable="true" scope="col" ></th>
+                    </tr>
+                    </thead>
+                    
+                    <tbody>
+                        {% for avant_propos in avant_propos %}
+                        <tr>
+                        <td><a href="{% url 'avant_propos_admin_change' avant_propos.id%}">{{ avant_propos.eleve}}</a></td>
+                        <td class="text-center">{{ avant_propos.eleve.show_classe }}e</td>
+                        <td>{{ avant_propos.trimestre }}</td>
+                        <td><a href="{% url 'avant_propos_admin_change' avant_propos.id%}">
+                            <i class="bi bi-pencil"></i></a></td>
+                        <td><a href="#" data-bs-toggle="modal" data-bs-target="#delete{{avant_propos.id}}">
+                            <i class="bi bi-trash"></i></a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            
+    
+        </div>
+    
+    </div>
+</div>
+
+    {% for avant_propos in avant_propos %}
+<div class="modal fade" id="delete{{avant_propos.id}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div data-bs-theme="dark" class="modal-header bg-pink ps-4">
+            <h1 class="modal-title" id="staticBackdropLabel">Supprimer</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p>Vous vous apprêtez à supprimer l'avant propos de {{avant_propos.eleve}} - {{avant_propos.trimestre}}. Attention, cette opération est irréversible.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Annuler</button>
+            <a class="btn btn-danger" href="{% url 'avant_propos_admin_delete' avant_propos.id %}">Supprimer</a>
+          </div>
+        </div>
+      </div>
+  </div>
+  {% endfor %}
+
+{% endblock content %}

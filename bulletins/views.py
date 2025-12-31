@@ -34,6 +34,7 @@ def home(request):
     classes_tutorat = models.Classe.objects.filter(tuteur=request.user)
     eleves = models.Eleve.objects.filter(classe__in=classes_tutorat)
     avisCollege = models.AvisCollege.objects.filter(eleve__in=eleves).filter(trimestre__in=trimestres)
+    avant_propos = models.AvantPropos.objects.filter(eleve__in=eleves).filter(trimestre__in=trimestres)
     disciplines = models.Discipline.objects.filter(enseigneePar=request.user).filter(trimestre__in=trimestres)
     my_corrections_disciplines = disciplines.filter(correctionsAValider=True)
     stages = models.Stage.objects.filter(tuteur=request.user).filter(trimestre__in=trimestres)
@@ -57,7 +58,7 @@ def home(request):
         my_corrections+=len(my_corrections_stages)
     if my_corrections_disciplines.exists() :
         my_corrections+=len(my_corrections_disciplines)
-    return render(request,'bulletins/home.html',context={'annee_en_cours':annee_en_cours,'trimestres':trimestres,'disciplines':disciplines,'stages':stages,'projets':projets,'my_corrections':my_corrections,'corrections':corrections,'avis':avisCollege})
+    return render(request,'bulletins/home.html',context={'annee_en_cours':annee_en_cours,'trimestres':trimestres,'disciplines':disciplines,'stages':stages,'projets':projets,'my_corrections':my_corrections,'corrections':corrections,'avis':avisCollege,'avant_propos':avant_propos})
 
 #Vues relatives à la gestion des classes
 
@@ -357,6 +358,124 @@ def avis_college_add(request):
     else :
         form = forms.AvisCollegeAddForm(user=request.user)
         return render(request,'bulletins/avisCollege/avis_college_add.html',context={'annee_en_cours':annee_en_cours,'form':form})
+
+@login_required
+def avant_propos_list(request):
+    """Liste des avant-propos pour les tuteurs"""
+    annee_en_cours = models.Annee.objects.filter(is_active=True).first()
+    if not annee_en_cours:
+        return redirect('home')
+    
+    trimestres=models.Trimestre.objects.filter(annee=annee_en_cours)
+    trimestres_actif=trimestres.filter(edition=True)
+    
+    # Filtrer les avant-propos pour les classes où l'utilisateur est tuteur
+    classes_tuteur = models.Classe.objects.filter(tuteur=request.user).filter(annee=annee_en_cours)
+    eleves_tuteur = models.Eleve.objects.filter(classe__in=classes_tuteur)
+    avant_propos = models.AvantPropos.objects.filter(eleve__in=eleves_tuteur).filter(trimestre__in=trimestres)
+    
+    return render(request,'bulletins/avantPropos/avant_propos_list.html',
+                  context={'avant_propos':avant_propos,'annee_en_cours':annee_en_cours,'trimestres_actif':trimestres_actif})
+
+@login_required
+def avant_propos_admin_list(request):
+    """Liste des avant-propos pour les admins"""
+    annee_en_cours = models.Annee.objects.filter(is_active=True).first()
+    if not annee_en_cours:
+        return redirect('home')
+    
+    trimestres = models.Trimestre.objects.filter(annee=annee_en_cours)
+    avant_propos = models.AvantPropos.objects.filter(trimestre__in=trimestres)
+    
+    return render(request,'bulletins/avantPropos/avant_propos_admin_list.html',
+                  context={'avant_propos':avant_propos,'annee_en_cours':annee_en_cours,'trimestres':trimestres})
+
+@login_required
+def avant_propos_change(request,idAvantPropos):
+    """Modifier un avant-propos"""
+    annee_en_cours = models.Annee.objects.filter(is_active=True).first()
+    if not annee_en_cours:
+        return redirect('home')
+    
+    avant_propos=get_object_or_404(models.AvantPropos,id=idAvantPropos)
+    
+    # Vérifier que l'utilisateur est tuteur de la classe de l'élève ou admin
+    eleve_classe = avant_propos.eleve.classe.filter(annee=annee_en_cours).first()
+    is_tuteur = eleve_classe and request.user in eleve_classe.tuteur.all()
+    is_admin = request.user.role == 'ADMIN'
+    
+    if not (is_tuteur or is_admin):
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = forms.AvantProposForm(request.POST,instance=avant_propos)
+        if form.is_valid():
+            avant_propos=form.save(commit=False)
+            avant_propos.modifie_par=request.user
+            avant_propos.save()
+            
+            log = models.Journal(utilisateur=request.user, 
+                               message=f'''Modification de l'avant propos : {avant_propos.trimestre} {avant_propos.eleve}''')
+            log.save()
+
+        if 'admin' in request.path:
+            return redirect('avant_propos_admin_liste')
+        else :
+            return redirect('avant_propos_liste')
+
+    else:
+        form = forms.AvantProposForm(instance=avant_propos)
+        return render(request, 'bulletins/avantPropos/avant_propos_change.html',
+                      context={'annee_en_cours': annee_en_cours, 'form': form,'avant_propos':avant_propos})
+
+@login_required
+def avant_propos_delete(request,idAvantPropos):
+    """Supprimer un avant-propos"""
+    avant_propos=get_object_or_404(models.AvantPropos,id=idAvantPropos)
+    
+    # Vérifier que l'utilisateur est tuteur de la classe de l'élève ou admin
+    annee_en_cours = models.Annee.objects.filter(is_active=True).first()
+    if annee_en_cours:
+        eleve_classe = avant_propos.eleve.classe.filter(annee=annee_en_cours).first()
+        is_tuteur = eleve_classe and request.user in eleve_classe.tuteur.all()
+        is_admin = request.user.role == 'ADMIN'
+        
+        if not (is_tuteur or is_admin):
+            return redirect('home')
+    
+    log = models.Journal(utilisateur=request.user, 
+                       message=f'''Suppression de l'avant propos : {avant_propos.trimestre} {avant_propos.eleve}''')
+    log.save()
+    avant_propos.delete()
+
+    if 'admin' in request.path:
+        return redirect('avant_propos_admin_liste')
+    else:
+        return redirect('avant_propos_liste')
+
+@login_required
+def avant_propos_add(request):
+    """Créer un avant-propos"""
+    annee_en_cours = models.Annee.objects.filter(is_active=True).first()
+    if not annee_en_cours:
+        return redirect('home')
+    
+    if request.method=='POST':
+        form=forms.AvantProposAddForm(request.POST,user=request.user)
+        if form.is_valid():
+            avant_propos=form.save(commit=False)
+            avant_propos.cree_par=request.user
+            avant_propos.modifie_par=request.user
+            avant_propos.save()
+            
+            log = models.Journal(utilisateur=request.user,
+                                 message=f'''Création de l'avant propos : {avant_propos.trimestre} {avant_propos.eleve}''')
+            log.save()
+
+        return redirect('avant_propos_liste')
+    else :
+        form = forms.AvantProposAddForm(user=request.user)
+        return render(request,'bulletins/avantPropos/avant_propos_add.html',context={'annee_en_cours':annee_en_cours,'form':form})
 
 #Gestion des absences par trimestre
 @login_required
@@ -1548,7 +1667,12 @@ def bulletins_select(request):
     classes=models.Classe.objects.filter(annee=annee_en_cours).order_by('nom')
     list_classes=[]
     log=[]
-    formMiseEnForme=forms.BulletinMisEnForme()
+    # Pré-sélectionner la mise en page par défaut si elle existe
+    mise_en_page_defaut = models.MiseEnPageBulletin.get_default()
+    initial_data = {}
+    if mise_en_page_defaut:
+        initial_data['miseEnPage'] = mise_en_page_defaut
+    formMiseEnForme=forms.BulletinMisEnForme(initial=initial_data)
     for classe in classes:
         form = forms.BulletinSelectEleves(classe = classe)
         list_classes.append([classe,form])
@@ -1587,6 +1711,16 @@ def bulletins_select(request):
                 if idMiseEnpage[0] != '':
                     miseEnPage=get_object_or_404(models.MiseEnPageBulletin,id=int(idMiseEnpage[0]))
                     data['miseEnPage']=miseEnPage
+                else:
+                    # Si aucune mise en page n'est spécifiée, utiliser la mise en page par défaut
+                    mise_en_page_defaut = models.MiseEnPageBulletin.get_default()
+                    if mise_en_page_defaut:
+                        data['miseEnPage'] = mise_en_page_defaut
+            else:
+                # Si le champ miseEnPage n'est pas dans le POST, utiliser la mise en page par défaut
+                mise_en_page_defaut = models.MiseEnPageBulletin.get_default()
+                if mise_en_page_defaut:
+                    data['miseEnPage'] = mise_en_page_defaut
             bulletins_form = forms.BulletinsEdition(data)
             if bulletins_form.is_valid():
                 bulletinsEdition = bulletins_form.save()
@@ -1658,7 +1792,8 @@ def mise_en_page_add(request):
     if request.method=='POST':
         form=forms.MiseEnPageBulletinForm(request.POST, request.FILES)
         if form.is_valid:
-            mise_en_page=form.save()
+            mise_en_page=form.save(commit=False)
+            mise_en_page.save(check_defaut=True)
             info = models.Journal(utilisateur=request.user,
                                   message=f'''Création mise en page {mise_en_page.intitule}''')
             info.save()
@@ -1673,7 +1808,8 @@ def mise_en_page_change(request,idMiseEnPage):
     if request.method == 'POST':
         form = forms.MiseEnPageBulletinForm(request.POST, request.FILES, instance=mise_en_page)
         if form.is_valid:
-            mise_en_page=form.save()
+            mise_en_page=form.save(commit=False)
+            mise_en_page.save(check_defaut=True)
             info = models.Journal(utilisateur=request.user,
                                   message=f'''Modification mise en page {mise_en_page.intitule}''')
             info.save()
@@ -1942,6 +2078,16 @@ def bulletins_send(request):
                         data['miseEnPage'] = miseEnPage
                     except (models.MiseEnPageBulletin.DoesNotExist, ValueError):
                         pass
+                else:
+                    # Si aucune mise en page n'est spécifiée, utiliser la mise en page par défaut
+                    mise_en_page_defaut = models.MiseEnPageBulletin.get_default()
+                    if mise_en_page_defaut:
+                        data['miseEnPage'] = mise_en_page_defaut
+            else:
+                # Si le champ miseEnPage n'est pas dans le POST, utiliser la mise en page par défaut
+                mise_en_page_defaut = models.MiseEnPageBulletin.get_default()
+                if mise_en_page_defaut:
+                    data['miseEnPage'] = mise_en_page_defaut
             
             bulletins_form = forms.BulletinsEdition(data)
             if bulletins_form.is_valid():

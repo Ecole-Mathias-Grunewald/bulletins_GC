@@ -21,6 +21,7 @@
                 <tr>
                     <th scope="col" data-sortable="true">id</th>
                     <th scope="col" data-sortable="true">Intitulé</th>
+                    <th scope="col" class="text-center" data-sortable="true">Par défaut</th>
                     <th scope="col" class="text-center" >Supprimer</th>
                 </tr>
                 </thead>
@@ -29,6 +30,13 @@
                     <tr>
                     <td>{{mise_en_page.id}}</td>
                     <td><a href="{% url 'mise_en_page_change' mise_en_page.id %}">{{mise_en_page.intitule}}</a></td>
+                    <td class="text-center">
+                        {% if mise_en_page.par_defaut %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Oui</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Non</span>
+                        {% endif %}
+                    </td>
                     <td class="text-center" ><a href="#" data-bs-toggle="modal" data-bs-target="#staticBackdropRemoveMiseEnPage{{mise_en_page.id}}">
                         <i class="bi bi-trash"></i></a></td>
                     </tr>

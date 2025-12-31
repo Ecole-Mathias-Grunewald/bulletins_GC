@@ -475,6 +475,23 @@ class AvisCollege(models.Model):
     class Meta :
         unique_together=('eleve','trimestre')
 
+class AvantPropos(models.Model):
+    eleve=models.ForeignKey(Eleve,on_delete=models.CASCADE)
+    trimestre=models.ForeignKey(Trimestre,on_delete=models.CASCADE)
+    contenu=models.TextField(max_length=1000,null=True,blank=True, verbose_name='Contenu')
+    cree_par=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='avant_propos_crees', verbose_name='Créé par')
+    modifie_par=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='avant_propos_modifies', verbose_name='Modifié par')
+    date_creation=models.DateTimeField(auto_now_add=True, verbose_name='Date de création')
+    date_modification=models.DateTimeField(auto_now=True, verbose_name='Date de modification')
+
+    class Meta :
+        unique_together=('eleve','trimestre')
+        verbose_name='Avant propos'
+        verbose_name_plural='Avant propos'
+
+    def __str__(self):
+        return f'Avant propos - {self.eleve} - {self.trimestre}'
+
 class MiseEnPageBulletin(models.Model):
     class ChoixPolice(models.TextChoices):
         HELVETICA = 'Helvetica', _("Helvetica")
@@ -486,6 +503,7 @@ class MiseEnPageBulletin(models.Model):
     couleurAppreciation=models.CharField(max_length=10,default='#ebebeb')
     couleurStageProjet = models.CharField(max_length=10, default='#ebebeb')
     couleurAvis = models.CharField(max_length=10, default='#ebebeb')
+    couleurAvantPropos = models.CharField(max_length=10, default='#ebebeb', verbose_name='Couleur avant propos')
     couleurNotice=models.CharField(max_length=10,default='#ebebeb')
     hauteurPage1=models.DecimalField(default=24.0,max_digits=3,decimal_places=1)
     largeurPage1=models.DecimalField(default=20.0,max_digits=3,decimal_places=1)
@@ -495,9 +513,33 @@ class MiseEnPageBulletin(models.Model):
     largeurEvaluation=models.IntegerField(validators=[MinValueValidator(0),MaxValueValidator(100)],default=55)
     signature_directeur_college=models.ImageField(upload_to='signatures/', blank=True, null=True, verbose_name='Signature directeur collège', validators=[validate_file_size])
     signature_directeur_lycee=models.ImageField(upload_to='signatures/', blank=True, null=True, verbose_name='Signature directeur lycée', validators=[validate_file_size])
+    par_defaut=models.BooleanField(default=False, verbose_name='Mise en page par défaut', help_text="Si coché, cette mise en page sera utilisée par défaut lors de l'édition des bulletins si aucune mise en page n'est spécifiée.")
 
     def __str__(self):
         return self.intitule
+
+    def save(self, *args, check_defaut=False, **kwargs):
+        # Vérifier si cette mise en page est marquée comme défaut
+        if check_defaut and self.par_defaut:
+            # Décocher toutes les autres mises en page par défaut
+            if self.id:
+                autres_mises_en_page = MiseEnPageBulletin.objects.exclude(id=self.id)
+            else:
+                autres_mises_en_page = MiseEnPageBulletin.objects.all()
+            for mise_en_page in autres_mises_en_page:
+                if mise_en_page.par_defaut:
+                    mise_en_page.par_defaut = False
+                    mise_en_page.save()
+                    break
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def get_default():
+        """Retourne la mise en page par défaut, ou None si aucune n'est définie."""
+        try:
+            return MiseEnPageBulletin.objects.get(par_defaut=True)
+        except MiseEnPageBulletin.DoesNotExist:
+            return None
 
 
 class ListBulletinScolaire(models.Model):
@@ -530,11 +572,15 @@ class ListBulletinScolaire(models.Model):
 
     def returnAvisCollege(self):
         return AvisCollege.objects.filter(trimestre__in=self.trimestres.all()).filter(eleve__in=self.eleves.all())
+    
+    def returnAvantPropos(self):
+        return AvantPropos.objects.filter(trimestre__in=self.trimestres.all()).filter(eleve__in=self.eleves.all())
 
     def produceBulletin(self):
         appreciations_eleves,disciplines_eleves=self.returnAppreciations()
         absencesEleves = self.returnAbsences()
         avisCollege_eleves=self.returnAvisCollege()
+        avant_propos_eleves=self.returnAvantPropos()
         stages_eleves=self.returnStage()
         projets_eleves=self.returnProjet()
 
@@ -554,6 +600,7 @@ class ListBulletinScolaire(models.Model):
                         'couleurAppreciation':'#ebebeb',
                         'couleurStageProjet': '#ebebeb',
                         'couleurAvis': '#ebebeb',
+                        'couleurAvantPropos': '#ebebeb',
                         'couleurNotice': '#ebebeb',
                         'largeurIntitule': 20,
                         'largeurDescriptif':25,
@@ -571,6 +618,7 @@ class ListBulletinScolaire(models.Model):
             dictParamBulletins['couleurAppreciation']=self.miseEnPage.couleurAppreciation
             dictParamBulletins['couleurStageProjet']=self.miseEnPage.couleurStageProjet
             dictParamBulletins['couleurAvis']=self.miseEnPage.couleurAvis
+            dictParamBulletins['couleurAvantPropos']=self.miseEnPage.couleurAvantPropos
             dictParamBulletins['couleurNotice']=self.miseEnPage.couleurNotice
             dictParamBulletins['largeurIntitule']=self.miseEnPage.largeurIntitule
             dictParamBulletins['largeurDescriptif'] = self.miseEnPage.largeurDescriptif
@@ -601,6 +649,7 @@ class ListBulletinScolaire(models.Model):
                 stages=stages_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
                 projets=projets_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
                 avisCollege=avisCollege_eleves.filter(trimestre=trimestre).filter(eleve=eleve).first()
+                avant_propos=avant_propos_eleves.filter(trimestre=trimestre).filter(eleve=eleve).first()
                 if not absencesEleves.filter(trimestre=trimestre).filter(eleve=eleve).exists() :
                     absenceEleve=Absence(eleve=eleve,trimestre=trimestre)
                 else :
@@ -615,6 +664,12 @@ class ListBulletinScolaire(models.Model):
                                            topPadding=0, rightPadding=0, bottomPadding=0)
                 story_page1=[]
                 story_page2 = []
+                
+                # Afficher l'avant-propos avant les disciplines si il existe
+                if avant_propos != None and avant_propos.contenu and len(avant_propos.contenu.strip()) > 0:
+                    pdf.avantPropos(avant_propos,dictParamBulletins, story_page1)
+                    pdf.espace(story_page1,0.5)
+                
                 pdf.ligneEnTeteAppreciation(story_page1,dictParamBulletins)
                 numAppreciation=0
                 for appreciation in appreciations:
@@ -698,6 +753,7 @@ class ListBulletinScolaire(models.Model):
         appreciations_eleves,disciplines_eleves=self.returnAppreciations()
         absencesEleves = self.returnAbsences()
         avisCollege_eleves=self.returnAvisCollege()
+        avant_propos_eleves=self.returnAvantPropos()
         stages_eleves=self.returnStage()
         projets_eleves=self.returnProjet()
 
@@ -717,6 +773,7 @@ class ListBulletinScolaire(models.Model):
                         'couleurAppreciation':'#ebebeb',
                         'couleurStageProjet': '#ebebeb',
                         'couleurAvis': '#ebebeb',
+                        'couleurAvantPropos': '#ebebeb',
                         'couleurNotice': '#ebebeb',
                         'largeurIntitule': 20,
                         'largeurDescriptif':25,
@@ -734,6 +791,7 @@ class ListBulletinScolaire(models.Model):
             dictParamBulletins['couleurAppreciation']=self.miseEnPage.couleurAppreciation
             dictParamBulletins['couleurStageProjet']=self.miseEnPage.couleurStageProjet
             dictParamBulletins['couleurAvis']=self.miseEnPage.couleurAvis
+            dictParamBulletins['couleurAvantPropos']=self.miseEnPage.couleurAvantPropos
             dictParamBulletins['couleurNotice']=self.miseEnPage.couleurNotice
             dictParamBulletins['largeurIntitule']=self.miseEnPage.largeurIntitule
             dictParamBulletins['largeurDescriptif'] = self.miseEnPage.largeurDescriptif
@@ -764,6 +822,7 @@ class ListBulletinScolaire(models.Model):
                 stages=stages_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
                 projets=projets_eleves.filter(trimestre=trimestre).filter(eleve=eleve)
                 avisCollege=avisCollege_eleves.filter(trimestre=trimestre).filter(eleve=eleve).first()
+                avant_propos=avant_propos_eleves.filter(trimestre=trimestre).filter(eleve=eleve).first()
                 if not absencesEleves.filter(trimestre=trimestre).filter(eleve=eleve).exists() :
                     absenceEleve=Absence(eleve=eleve,trimestre=trimestre)
                 else :
@@ -778,6 +837,12 @@ class ListBulletinScolaire(models.Model):
                                            topPadding=0, rightPadding=0, bottomPadding=0)
                 story_page1=[]
                 story_page2 = []
+                
+                # Afficher l'avant-propos avant les disciplines si il existe
+                if avant_propos != None and avant_propos.contenu and len(avant_propos.contenu.strip()) > 0:
+                    pdf.avantPropos(avant_propos,dictParamBulletins, story_page1)
+                    pdf.espace(story_page1,0.5)
+                
                 pdf.ligneEnTeteAppreciation(story_page1,dictParamBulletins)
                 numAppreciation=0
                 for appreciation in appreciations:

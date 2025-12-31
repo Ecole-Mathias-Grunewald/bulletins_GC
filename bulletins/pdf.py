@@ -204,6 +204,21 @@ def avisCollege(avisCollege,dictParamBulletins,story):
                         style=pdf_styles.tableauAvisCollege(TAILLE_POLICE,font,couleur))
     story.append(tableauAvisCollege)
 
+def avantPropos(avant_propos,dictParamBulletins,story):
+    """Affiche l'avant-propos dans le bulletin PDF"""
+    # Largeur des colonnes d'un tableau appreciation
+    largeur_avant_propos = dictParamBulletins['largeur_tot_tab_appreciations']
+    TAILLE_POLICE = dictParamBulletins['fontSize']
+    font = dictParamBulletins['font']
+    couleur=dictParamBulletins.get('couleurAvantPropos', '#ebebeb')
+    data=[]
+    data.append(["Avant propos"])
+    contenu, style = pdf_donnees.avantPropos(avant_propos, TAILLE_POLICE, font)
+    data.append([Paragraph(contenu,style)])
+    tableauAvantPropos = Table(data, colWidths=[largeur_avant_propos],
+                        style=pdf_styles.tableauAvisCollege(TAILLE_POLICE,font,couleur))  # Utilise le même style que l'avis
+    story.append(tableauAvantPropos)
+
 def stagesProjets(stagesEleve,projetsEleve,dictParamBulletins,story):
     largeur_avis = dictParamBulletins['largeur_tot_tab_appreciations']
     TAILLE_POLICE = dictParamBulletins['fontSize']

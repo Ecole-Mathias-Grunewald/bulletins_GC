@@ -20,6 +20,19 @@
                     <label for="{{form.intitule.id_for_label}}"">Intitulé</label>
                 </div>
 
+                <fieldset class="rounded shadow p-4 mb-4">
+                    <h2 class="fs-4 pb-2">Paramètres</h2>
+                    <div class="form-check form-switch">
+                        {{ form.par_defaut|add_classes:'form-check-input' }}
+                        <label class="form-check-label" for="{{ form.par_defaut.id_for_label }}">
+                            {{ form.par_defaut.label }}
+                        </label>
+                        {% if form.par_defaut.help_text %}
+                            <small class="form-text text-muted d-block mt-1">{{ form.par_defaut.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </fieldset>
+
                 <div class="row">
                     <div class="col-12 col-sm-6">
                         <fieldset class="rounded shadow p-4">
@@ -68,6 +81,11 @@
                                     <div class="mb-2">
                                         <label for="{{form.couleurAvis.id_for_label}}" class="mb-2">Avis trimestriel</label>    
                                         {{ form.couleurAvis|add_classes:'form-control form-control-color'}}
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label for="{{form.couleurAvantPropos.id_for_label}}" class="mb-2">Avant propos</label>    
+                                        {{ form.couleurAvantPropos|add_classes:'form-control form-control-color'}}
                                     </div>
 
                                     <div class="mb-2">

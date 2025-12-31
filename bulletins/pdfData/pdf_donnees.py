@@ -92,6 +92,15 @@ def avisCollege(avis,taillePolice,font):
                 """
     return paragraphe,pdf_styles.avisCollege(pdf_taille.avisCollege(avis,taillePolice),font)
 
+def avantPropos(avant_propos,taillePolice,font):
+    """Génère le contenu de l'avant-propos pour le PDF"""
+    paragraphe = f"""
+                <font size={pdf_taille.avisCollege(avant_propos,taillePolice)}>
+                {avant_propos.contenu}
+                </font>
+                """
+    return paragraphe,pdf_styles.avisCollege(pdf_taille.avisCollege(avant_propos,taillePolice),font)
+
 def stage(stageEleve,fontSize,font):
     paragraphe=''
     if stageEleve.typeStage == 'AGR':

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from bulletins.models import Classe,Eleve,Trimestre,\
     Absence,Discipline,CompetencesConnaissances,Appreciation,\
-    CompetencesAppreciations,ListBulletinScolaire,Annee,AvisCollege,Stage,Projet,Bareme,MiseEnPageBulletin,SMTPSettings
+    CompetencesAppreciations,ListBulletinScolaire,Annee,AvisCollege,AvantPropos,Stage,Projet,Bareme,MiseEnPageBulletin,SMTPSettings
 
 class EleveAdmin(admin.ModelAdmin):
     list_display = ('nom','prenom')
@@ -32,6 +32,9 @@ class ProjetAdmin(admin.ModelAdmin):
     list_display = ('eleve','typeProjet','trimestre','tuteur')
 
 class AvisCollegeAdmin(admin.ModelAdmin):
+    list_display = ('eleve','trimestre')
+
+class AvantProposAdmin(admin.ModelAdmin):
     list_display = ('eleve','trimestre')
 
 class BaremeAdmin(admin.ModelAdmin):
@@ -67,6 +70,7 @@ admin.site.register(Projet,ProjetAdmin)
 admin.site.register(Bareme,BaremeAdmin)
 admin.site.register(MiseEnPageBulletin,MiseEnPageBulletinAdmin)
 admin.site.register(AvisCollege,AvisCollegeAdmin)
+admin.site.register(AvantPropos,AvantProposAdmin)
 admin.site.register(SMTPSettings,SMTPSettingsAdmin)
 
 
