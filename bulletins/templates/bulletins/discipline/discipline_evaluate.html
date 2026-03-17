@@ -19,6 +19,29 @@
             <h2 class="mb-2">Évaluations</h2>
     </div>
 </div>
+
+<div class="container-fluid container-md">
+    {% if discipline.moyenne != None and discipline.activerMoyenne %}
+        <div class="alert alert-light border shadow-sm mt-3 mb-2 col-12 col-lg-11 col-xl-10">
+            <strong>Moyenne de la classe :</strong> {{ discipline.moyenne }}
+            {% if afficher_stats_notes and discipline.notePlusHaute != None %}
+                <span class="text-secondary ms-2">|</span>
+                <span class="ms-2"><strong>Max :</strong> {{ discipline.notePlusHaute }}</span>
+            {% endif %}
+            {% if afficher_stats_notes and discipline.notePlusBasse != None %}
+                <span class="text-secondary ms-2">|</span>
+                <span class="ms-2"><strong>Min :</strong> {{ discipline.notePlusBasse }}</span>
+            {% endif %}
+        </div>
+    {% elif afficher_stats_notes %}
+        {% if discipline.notePlusHaute != None or discipline.notePlusBasse != None %}
+            <div class="alert alert-light border shadow-sm mt-3 mb-2">
+                {% if discipline.notePlusHaute != None %}<span class="me-3"><strong>Max :</strong> {{ discipline.notePlusHaute }}</span>{% endif %}
+                {% if discipline.notePlusBasse != None %}<span><strong>Min :</strong> {{ discipline.notePlusBasse }}</span>{% endif %}
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
 {% if discipline.enseigneeA %}
 
 {% if 'admin' in request.path %}
@@ -77,6 +100,13 @@
                                         <div class="form-floating mb-3">
                                             {{ form.1.note|add_classes:'form-control'}}
                                             <label for="{{form.note.id_for_label}}">Note</label>
+                                            {% if afficher_stats_notes and rangs_par_eleve %}
+                                                {% with rang=rangs_par_eleve|get_item:form.0.id %}
+                                                    {% if rang %}
+                                                        <div class="form-text text-secondary">Rang : {{ rang }}</div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endif %}
                                         </div>
                                     </div>
             

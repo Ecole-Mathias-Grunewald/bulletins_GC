@@ -140,11 +140,21 @@ def creerBulletinAppreciations(appreciation,competences,canvas,dictParamBulletin
             dict_evaluation['note'] = appreciation.note
             if appreciation.discipline.activerMoyenne and appreciation.discipline.moyenne is not None:
                 dict_evaluation['moyenne'] = appreciation.discipline.moyenne
+            if appreciation.discipline.activerRangMaxMin:
+                if appreciation.discipline.notePlusBasse is not None:
+                    dict_evaluation['min'] = appreciation.discipline.notePlusBasse
+                if appreciation.discipline.notePlusHaute is not None:
+                    dict_evaluation['max'] = appreciation.discipline.notePlusHaute
         elif appreciation.resultat != None and appreciation.resultat != '':
             dict_evaluation['resultat'] = appreciation.resultat
 
-        donneesLigneEvaluation, colonnesLigneEvaluation = pdf_donnees.ligneEvaluation(dict_evaluation, largeur_rubrique,
-                                                                                      largeur_evaluation_rubrique)
+        donneesLigneEvaluation, colonnesLigneEvaluation = pdf_donnees.ligneEvaluation(
+            dict_evaluation,
+            largeur_rubrique,
+            largeur_evaluation_rubrique,
+            taillePolice=TAILLE_POLICE * 0.9,
+            font=font,
+        )
         tableauLigneEvaluation = Table([donneesLigneEvaluation],# colWidths=colonnesLigneEvaluation,
                                        style=pdf_styles.tableauLigneEvaluation(TAILLE_POLICE*0.9,font))
         contenuTableauEvaluation.append([tableauLigneEvaluation])

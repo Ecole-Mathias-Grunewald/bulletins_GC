@@ -343,6 +343,7 @@ class Discipline(models.Model):
     nbAppreciationsVides=models.PositiveIntegerField(blank=True,null=True)
     presentBulletin = models.BooleanField(default=True,verbose_name='intégrer au bulletin')
     activerMoyenne = models.BooleanField(default=True,verbose_name='afficher la moyenne')
+    activerRangMaxMin = models.BooleanField(default=False, verbose_name='afficher rang, note max et min')
     correctionsAValider = models.BooleanField(default=False, verbose_name='corrections à valider')
     ordre = models.PositiveIntegerField(default=0, verbose_name='Ordre d\'affichage dans le bulletin', 
                                          help_text='Définit l\'ordre d\'affichage des enseignements dans le bulletin (0 = premier, plus le nombre est élevé, plus l\'enseignement apparaît tard)')

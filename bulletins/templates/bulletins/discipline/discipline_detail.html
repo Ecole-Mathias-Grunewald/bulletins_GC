@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load bulletins_extras %}
 {% block breadcrumb%}
 <li class="breadcrumb-item"><a href="{% url 'home' %}" class="link-secondary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">Accueil</a></li>
 <li class="breadcrumb-item"><a href="{% url 'disciplines_liste' %}" class="link-secondary link-offset-2 link-offset-3-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover">Enseignements</a></li>
@@ -21,7 +22,9 @@
                                 {% if discipline.volumeHoraire %}<li class="list-group-item bg-light-subtle">Volume horaire : {{discipline.volumeHoraire}} h</li>{%endif%}
                                 {% if discipline.typeEnseignement %}<li class="list-group-item bg-light-subtle">{{discipline.get_typeEnseignement_display}}</li>{%endif%}
                                 {% if discipline.dateDebut and discipline.dateFin %}<li class="list-group-item bg-light-subtle">du {{discipline.dateDebut}} au {{discipline.dateFin}}</li>{%endif%}
-                                {% if discipline.moyenne and discipline.activerMoyenne %}<li class="list-group-item bg-light-subtle">Moyenne de la classe : {{discipline.moyenne}}</li>{%endif%}
+                                {% if discipline.moyenne != None and discipline.activerMoyenne %}<li class="list-group-item bg-light-subtle">Moyenne de la classe : {{discipline.moyenne}}</li>{%endif%}
+                                {% if afficher_stats_notes and discipline.notePlusHaute != None %}<li class="list-group-item bg-light-subtle">Moyenne la plus haute : {{discipline.notePlusHaute}}</li>{%endif%}
+                                {% if afficher_stats_notes and discipline.notePlusBasse != None %}<li class="list-group-item bg-light-subtle">Moyenne la plus basse : {{discipline.notePlusBasse}}</li>{%endif%}
                             </ul>
                         </div>
 
@@ -64,7 +67,16 @@
                         <strong>Engagement :</strong> {{appreciation.engagement|default_if_none:"..."}}
                     </div>
                     <div class="col-6 col-sm-4">
-                        {% if appreciation.note %}<strong>Note :</strong> {{appreciation.note}}{% else %}<strong>Résultat :</strong> {{appreciation.resultat|default_if_none:"..."}}{% endif %}
+                        {% if appreciation.note != None %}
+                            <strong>Note :</strong> {{appreciation.note}}
+                            {% if afficher_stats_notes and rangs_par_eleve %}
+                                {% with rang=rangs_par_eleve|get_item:appreciation.eleve.id %}
+                                    {% if rang %}<span class="text-secondary">(rang {{rang}})</span>{% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        {% else %}
+                            <strong>Résultat :</strong> {{appreciation.resultat|default_if_none:"..."}}
+                        {% endif %}
                     </div>
                 </div>
                 <div class="row mt-2">

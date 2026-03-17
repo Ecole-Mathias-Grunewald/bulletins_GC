@@ -1,6 +1,8 @@
 #Préparation des données pour incorporation dans les bulletins
 from . import pdf_taille
 from . import pdf_styles
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.platypus import Paragraph
 
 def datesMiseEnForme(dateDebut,dateFin,taille,volumeHoraire=None):
     dateDebutFormate = str(dateDebut).split('-')
@@ -40,33 +42,60 @@ def commentaire(commentaire,taille,font):
         paragraphe+=f'''<font size={taille}>{commentaire}</font>'''
     return paragraphe,pdf_styles.caseCommentaire(taille,font)
 
-def ligneEvaluation(dictEvaluation,largeurRubrique,largeurEvaluationRubrique):
+def ligneEvaluation(dictEvaluation,largeurRubrique,largeurEvaluationRubrique,taillePolice=None,font=None):
     donneesLigneEvaluation=[]
     colonnesLigneEvaluation=[]
     if 'attitude' in dictEvaluation.keys():
-        donneesLigneEvaluation.append("Attitude : ")
+        donneesLigneEvaluation.append("Attitude :")
         colonnesLigneEvaluation.append(largeurRubrique)
         donneesLigneEvaluation.append(dictEvaluation['attitude'])
         colonnesLigneEvaluation.append(largeurEvaluationRubrique)
     if 'engagement' in dictEvaluation.keys():
-        donneesLigneEvaluation.append("     Engagement :")
+        donneesLigneEvaluation.append("Engagement :")
         colonnesLigneEvaluation.append(largeurRubrique)
         donneesLigneEvaluation.append(dictEvaluation['engagement'])
         colonnesLigneEvaluation.append(largeurEvaluationRubrique)
     if 'resultat' in dictEvaluation.keys():
-        donneesLigneEvaluation.append("     Résultat :")
+        donneesLigneEvaluation.append("Résultat :")
         colonnesLigneEvaluation.append(largeurRubrique)
         donneesLigneEvaluation.append(dictEvaluation['resultat'])
         colonnesLigneEvaluation.append(largeurEvaluationRubrique)
     elif 'note' in dictEvaluation.keys():
-        donneesLigneEvaluation.append("     Note :")
+        donneesLigneEvaluation.append("Note :")
         colonnesLigneEvaluation.append(largeurRubrique)
         donneesLigneEvaluation.append(dictEvaluation['note'])
         colonnesLigneEvaluation.append(largeurEvaluationRubrique)
-        if 'moyenne' in dictEvaluation.keys():
-            donneesLigneEvaluation.append("     (moy. clas. :")
+        if 'moyenne' in dictEvaluation.keys() or 'min' in dictEvaluation.keys() or 'max' in dictEvaluation.keys():
+            texte = ""
+            if 'moyenne' in dictEvaluation.keys():
+                texte += f"moy. clas. : {dictEvaluation['moyenne']}"
+            if 'min' in dictEvaluation.keys():
+                if texte:
+                    texte += " | "
+                texte += f"min : {dictEvaluation['min']}"
+            if 'max' in dictEvaluation.keys():
+                if texte:
+                    texte += " | "
+                texte += f"max : {dictEvaluation['max']}"
+
+            small = (taillePolice * 0.8) if taillePolice else None
+            if small and font:
+                style_small = ParagraphStyle(
+                    'evaluation_extra_small',
+                    fontName=font,
+                    fontSize=small,
+                    leading=small * 1.05,
+                )
+                texte_nbsp = texte.replace(" | ", "&nbsp;|&nbsp;").replace(" ", "&nbsp;")
+                donneesLigneEvaluation.append("")
+                colonnesLigneEvaluation.append(largeurRubrique)
+                donneesLigneEvaluation.append(Paragraph(f"<font size='{small}'>&nbsp;({texte_nbsp})</font>", style_small))
+                colonnesLigneEvaluation.append(largeurEvaluationRubrique)
+                return donneesLigneEvaluation,colonnesLigneEvaluation
+
+            donneesLigneEvaluation.append("     (")
             colonnesLigneEvaluation.append(largeurRubrique)
-            donneesLigneEvaluation.append(str(dictEvaluation['moyenne'])+")")
+            donneesLigneEvaluation.append(texte + ")")
             colonnesLigneEvaluation.append(largeurEvaluationRubrique)
 
     return donneesLigneEvaluation,colonnesLigneEvaluation

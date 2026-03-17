@@ -980,7 +980,26 @@ def discipline_detail(request,idDiscipline):
     appreciations=models.Appreciation.objects.filter(discipline=discipline)
     competences = models.CompetencesConnaissances.objects.filter(discipline=discipline)
     competencesAppreciations=models.CompetencesAppreciations.objects.filter(appreciation__in=appreciations)
-    return render(request, 'bulletins/discipline/discipline_detail.html',context={'discipline': discipline, 'competences': competences,'appreciations':appreciations,'competencesAppreciations':competencesAppreciations})
+    notes_par_eleve = {a.eleve_id: a.note for a in appreciations if a.note is not None}
+    notes_distinctes = sorted(set(notes_par_eleve.values()), reverse=True)
+    rang_par_note = {note: i + 1 for i, note in enumerate(notes_distinctes)}
+    rangs_par_eleve = {eleve_id: rang_par_note[note] for eleve_id, note in notes_par_eleve.items()}
+    has_notes = len(notes_par_eleve) > 0
+    afficher_stats_notes = discipline.activerRangMaxMin and has_notes
+
+    return render(
+        request,
+        'bulletins/discipline/discipline_detail.html',
+        context={
+            'discipline': discipline,
+            'competences': competences,
+            'appreciations': appreciations,
+            'competencesAppreciations': competencesAppreciations,
+            'rangs_par_eleve': rangs_par_eleve,
+            'afficher_stats_notes': afficher_stats_notes,
+            'has_notes': has_notes,
+        },
+    )
 
 @login_required
 @permission_required('bulletins.view_discipline')
@@ -1106,12 +1125,23 @@ def discipline_evaluate(request,idDiscipline):
         else :
             return redirect('discipline_evaluate', idDiscipline)
     else:
+        notes_par_eleve = {a.eleve_id: a.note for a in appreciations if a.note is not None}
+        notes_distinctes = sorted(set(notes_par_eleve.values()), reverse=True)
+        rang_par_note = {note: i + 1 for i, note in enumerate(notes_distinctes)}
+        rangs_par_eleve = {eleve_id: rang_par_note[note] for eleve_id, note in notes_par_eleve.items()}
+        has_notes = len(notes_par_eleve) > 0
+        afficher_stats_notes = discipline.activerRangMaxMin and has_notes
+
         return render(request, 'bulletins/discipline/discipline_evaluate.html',
                       context={'eleves':eleves,
                                'discipline':discipline,
                                'liste_formulaires':liste_formulaires,
                                'bareme':notice,
-                               'annee_en_cours':annee_en_cours})
+                               'annee_en_cours':annee_en_cours,
+                               'rangs_par_eleve': rangs_par_eleve,
+                               'afficher_stats_notes': afficher_stats_notes,
+                               'has_notes': has_notes,
+                               })
 
 #Gestion des projets
 @login_required

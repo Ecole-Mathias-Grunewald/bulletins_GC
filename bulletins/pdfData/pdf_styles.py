@@ -78,8 +78,8 @@ def tableauLigneEvaluation(taille,font):
         ('FONTNAME', (3, 0), (3, 0), font + '-Bold'),
         ('FONTNAME', (5, 0), (5, 0), font + '-Bold'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('LEFTPADDING',(0, 0), (-1, -1), 1),
-        ('RIGHTPADDING',(0, 0), (-1, -1), 1),
+        ('LEFTPADDING',(0, 0), (-1, -1), 0),
+        ('RIGHTPADDING',(0, 0), (-1, -1), 3),
         ('TOPPADDING', (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         #Centrer les notes

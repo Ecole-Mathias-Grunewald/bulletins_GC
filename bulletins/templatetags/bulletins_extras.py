@@ -36,3 +36,16 @@ def add_classes(value, arg):
             css_classes.append(a)
     # join back to single string
     return value.as_widget(attrs={'class': ' '.join(css_classes)})
+
+
+@register.filter(name='get_item')
+def get_item(value, key):
+    if value is None:
+        return None
+    try:
+        return value.get(key)
+    except AttributeError:
+        try:
+            return value[key]
+        except Exception:
+            return None
