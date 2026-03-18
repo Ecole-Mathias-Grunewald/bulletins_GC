@@ -514,6 +514,7 @@ class MiseEnPageBulletin(models.Model):
     largeurEvaluation=models.IntegerField(validators=[MinValueValidator(0),MaxValueValidator(100)],default=55)
     signature_directeur_college=models.ImageField(upload_to='signatures/', blank=True, null=True, verbose_name='Signature directeur collège', validators=[validate_file_size])
     signature_directeur_lycee=models.ImageField(upload_to='signatures/', blank=True, null=True, verbose_name='Signature directeur lycée', validators=[validate_file_size])
+    logo=models.ImageField(upload_to='logos/', blank=True, null=True, verbose_name='Logo', validators=[validate_file_size])
     par_defaut=models.BooleanField(default=False, verbose_name='Mise en page par défaut', help_text="Si coché, cette mise en page sera utilisée par défaut lors de l'édition des bulletins si aucune mise en page n'est spécifiée.")
 
     def __str__(self):
@@ -639,9 +640,17 @@ class ListBulletinScolaire(models.Model):
                     dictParamBulletins['signature_lycee'] = None
             except (ValueError, AttributeError):
                 dictParamBulletins['signature_lycee'] = None
+            try:
+                if self.miseEnPage.logo and self.miseEnPage.logo.name:
+                    dictParamBulletins['logo'] = self.miseEnPage.logo.path
+                else:
+                    dictParamBulletins['logo'] = None
+            except (ValueError, AttributeError):
+                dictParamBulletins['logo'] = None
         else:
             dictParamBulletins['signature_college'] = None
             dictParamBulletins['signature_lycee'] = None
+            dictParamBulletins['logo'] = None
 
         for eleve in self.eleves.all() :
             for trimestre in self.trimestres.all():
@@ -812,9 +821,17 @@ class ListBulletinScolaire(models.Model):
                     dictParamBulletins['signature_lycee'] = None
             except (ValueError, AttributeError):
                 dictParamBulletins['signature_lycee'] = None
+            try:
+                if self.miseEnPage.logo and self.miseEnPage.logo.name:
+                    dictParamBulletins['logo'] = self.miseEnPage.logo.path
+                else:
+                    dictParamBulletins['logo'] = None
+            except (ValueError, AttributeError):
+                dictParamBulletins['logo'] = None
         else:
             dictParamBulletins['signature_college'] = None
             dictParamBulletins['signature_lycee'] = None
+            dictParamBulletins['logo'] = None
 
         for eleve in self.eleves.all() :
             for trimestre in self.trimestres.all():

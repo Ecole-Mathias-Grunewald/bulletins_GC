@@ -143,6 +143,26 @@
                 </div>
 
                 <fieldset class="rounded shadow p-4 mt-4">
+                    <h2 class="fs-4 pb-2">Logo</h2>
+
+                    <div class="mb-3">
+                        <label for="{{form.logo.id_for_label}}" class="form-label">Logo du bulletin <small class="text-muted">(par défaut : logobull.jpg — max. 100 ko)</small></label>
+                        {{ form.logo|add_classes:'form-control'}}
+                        {% if mise_en_page.logo %}
+                            <div class="mt-2">
+                                <small class="text-muted">Fichier actuel :</small>
+                                <br>
+                                <img src="{{ mise_en_page.logo.url }}" alt="Logo" class="img-thumbnail mt-2" style="max-height: 100px;">
+                            </div>
+                        {% endif %}
+                        {% if form.logo.errors %}
+                            <div class="text-danger small">{{ form.logo.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                </fieldset>
+
+                <fieldset class="rounded shadow p-4 mt-4">
                     <h2 class="fs-4 pb-2">Signatures des directeurs</h2>
 
                     <div class="row">

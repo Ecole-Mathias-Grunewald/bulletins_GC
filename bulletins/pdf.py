@@ -22,8 +22,8 @@ def enTete(eleve, trimestre,canvas,dictParamBulletins):
                                  topPadding=4, rightPadding=0, bottomPadding=0)
     frameInfosEleve = Frame(x1=6 * cm, y1=25.40 * cm, width=14 * cm, height=4.43 * cm, showBoundary=0,
                                  leftPadding=10, topPadding=0, rightPadding=0, bottomPadding=0)
-    #infosEcole = [Image(dictParamBulletins['logoFile'], width=5 * cm, height=3.43 * cm)]
-    infosEcole = [Image(settings.BASE_DIR.joinpath('static/images/logobull.jpg'), width=5 * cm, height=3.43 * cm)]
+    logo_path = dictParamBulletins.get('logo') or settings.BASE_DIR.joinpath('static/images/logobull.jpg')
+    infosEcole = [Image(logo_path, width=5 * cm, height=3.43 * cm)]
     styleInfosEleve = ParagraphStyle('infos_Eleve',
                                      #font=dictParamBulletins['font'],
                                      leading=24,
