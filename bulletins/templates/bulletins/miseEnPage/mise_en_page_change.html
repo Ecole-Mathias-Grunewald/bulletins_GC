@@ -31,13 +31,22 @@
                             <small class="form-text text-muted d-block mt-1">{{ form.par_defaut.help_text }}</small>
                         {% endif %}
                     </div>
-                    <div class="form-check form-switch">
+                    <div class="form-check form-switch mb-2">
                         {{ form.afficher_descriptif_classe|add_classes:'form-check-input' }}
                         <label class="form-check-label" for="{{ form.afficher_descriptif_classe.id_for_label }}">
                             {{ form.afficher_descriptif_classe.label }}
                         </label>
                         {% if form.afficher_descriptif_classe.help_text %}
                             <small class="form-text text-muted d-block mt-1">{{ form.afficher_descriptif_classe.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-check form-switch">
+                        {{ form.bulletin_semestriel|add_classes:'form-check-input' }}
+                        <label class="form-check-label" for="{{ form.bulletin_semestriel.id_for_label }}">
+                            {{ form.bulletin_semestriel.label }}
+                        </label>
+                        {% if form.bulletin_semestriel.help_text %}
+                            <small class="form-text text-muted d-block mt-1">{{ form.bulletin_semestriel.help_text }}</small>
                         {% endif %}
                     </div>
                 </fieldset>

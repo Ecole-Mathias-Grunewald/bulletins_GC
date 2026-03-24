@@ -39,8 +39,9 @@ def enTete(eleve, trimestre,canvas,dictParamBulletins):
     else:
         dateNaissanceBulletin = ""
     
+    intitule_trimestre = trimestre.intitule.replace('Trimestre', 'Semestre') if dictParamBulletins.get('bulletin_semestriel') else trimestre.intitule
     infosEleve_content = f'''
-                <font size=10>Bulletin scolaire - {trimestre.intitule} {trimestre.annee.intitule}</font> <br />
+                <font size=10>Bulletin scolaire - {intitule_trimestre} {trimestre.annee.intitule}</font> <br />
                 <font size = 17>{eleve.prenom} {eleve.nom} </font><br />
     '''
     if dateNaissanceBulletin:
