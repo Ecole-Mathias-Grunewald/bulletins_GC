@@ -45,7 +45,11 @@ def enTete(eleve, trimestre,canvas,dictParamBulletins):
     '''
     if dateNaissanceBulletin:
         infosEleve_content += f'<font size = 11>{dateNaissanceBulletin} </font><br />'
-    infosEleve_content += f'<font size = 13>{eleve.show_classe()}e Classe</font>'
+    classe = eleve.show_classe()
+    classe_text = f'{classe}e Classe'
+    if dictParamBulletins.get('afficher_descriptif_classe') and classe.descriptif:
+        classe_text += f' - {classe.descriptif}'
+    infosEleve_content += f'<font size = 13>{classe_text}</font>'
     
     infosEleve = [TopPadder(Paragraph(infosEleve_content, styleInfosEleve))]
 

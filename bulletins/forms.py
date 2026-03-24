@@ -14,6 +14,7 @@ class ClasseForm(forms.ModelForm):
         exclude=('effectifs','annee')
         widgets={
             'nom': forms.TextInput(attrs={'placeholder': 'Nom'}),
+            'descriptif': forms.Textarea(attrs={'placeholder': 'Descriptif de la classe', 'rows': 4}),
             'tuteur': forms.CheckboxSelectMultiple(),
             'cycle': forms.Select(attrs={'placeholder': 'Cycle'}),
             #'annee': forms.Select(attrs={'placeholder': 'Année'}),

@@ -22,13 +22,22 @@
 
                 <fieldset class="rounded shadow p-4 mb-4">
                     <h2 class="fs-4 pb-2">Paramètres</h2>
-                    <div class="form-check form-switch">
+                    <div class="form-check form-switch mb-2">
                         {{ form.par_defaut|add_classes:'form-check-input' }}
                         <label class="form-check-label" for="{{ form.par_defaut.id_for_label }}">
                             {{ form.par_defaut.label }}
                         </label>
                         {% if form.par_defaut.help_text %}
                             <small class="form-text text-muted d-block mt-1">{{ form.par_defaut.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-check form-switch">
+                        {{ form.afficher_descriptif_classe|add_classes:'form-check-input' }}
+                        <label class="form-check-label" for="{{ form.afficher_descriptif_classe.id_for_label }}">
+                            {{ form.afficher_descriptif_classe.label }}
+                        </label>
+                        {% if form.afficher_descriptif_classe.help_text %}
+                            <small class="form-text text-muted d-block mt-1">{{ form.afficher_descriptif_classe.help_text }}</small>
                         {% endif %}
                     </div>
                 </fieldset>

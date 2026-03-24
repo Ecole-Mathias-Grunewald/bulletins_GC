@@ -25,7 +25,12 @@
                         {{formClasse.nom|add_classes:'form-control'}}
                         <label for="{{formClasse.intitule.id_for_label}}"">Nom de la classe</label>
                     </div>
-                    
+
+                    <div class="form-floating mb-3">
+                        {{ formClasse.descriptif.errors }}
+                        {{formClasse.descriptif|add_classes:'form-control'}}
+                        <label for="{{formClasse.descriptif.id_for_label}}">Descriptif</label>
+                    </div>
 
                     <label class="fs-5" for="{{formClasse.tuteur.id_for_label}}">Tuteurs</label>
 

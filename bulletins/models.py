@@ -38,6 +38,7 @@ class Classe(models.Model):
         LYCEE = 'LYC', _("Lycée")
 
     nom = models.CharField(max_length=20)
+    descriptif = models.TextField(blank=True, default='')
     effectifs=models.PositiveIntegerField(blank=True,null=True,default=0)
     annee=models.ForeignKey(Annee,on_delete=models.CASCADE,blank=True,null=True)
     tuteur=models.ManyToManyField(settings.AUTH_USER_MODEL,blank=True)
@@ -516,6 +517,7 @@ class MiseEnPageBulletin(models.Model):
     signature_directeur_lycee=models.ImageField(upload_to='signatures/', blank=True, null=True, verbose_name='Signature directeur lycée', validators=[validate_file_size])
     logo=models.ImageField(upload_to='logos/', blank=True, null=True, verbose_name='Logo', validators=[validate_file_size])
     par_defaut=models.BooleanField(default=False, verbose_name='Mise en page par défaut', help_text="Si coché, cette mise en page sera utilisée par défaut lors de l'édition des bulletins si aucune mise en page n'est spécifiée.")
+    afficher_descriptif_classe=models.BooleanField(default=False, verbose_name='Afficher le descriptif de la classe', help_text="Si coché, le descriptif de la classe s'affiche à la suite de son nom dans l'en-tête du bulletin.")
 
     def __str__(self):
         return self.intitule
@@ -607,6 +609,7 @@ class ListBulletinScolaire(models.Model):
                         'largeurIntitule': 20,
                         'largeurDescriptif':25,
                         'largeurEvaluation':55,
+                        'afficher_descriptif_classe': False,
                         }
 
 
@@ -625,6 +628,7 @@ class ListBulletinScolaire(models.Model):
             dictParamBulletins['largeurIntitule']=self.miseEnPage.largeurIntitule
             dictParamBulletins['largeurDescriptif'] = self.miseEnPage.largeurDescriptif
             dictParamBulletins['largeurEvaluation'] = self.miseEnPage.largeurEvaluation
+            dictParamBulletins['afficher_descriptif_classe'] = self.miseEnPage.afficher_descriptif_classe
             # Ajout des signatures si elles existent
             try:
                 if self.miseEnPage.signature_directeur_college and self.miseEnPage.signature_directeur_college.name:
@@ -788,6 +792,7 @@ class ListBulletinScolaire(models.Model):
                         'largeurIntitule': 20,
                         'largeurDescriptif':25,
                         'largeurEvaluation':55,
+                        'afficher_descriptif_classe': False,
                         }
 
 
@@ -806,6 +811,7 @@ class ListBulletinScolaire(models.Model):
             dictParamBulletins['largeurIntitule']=self.miseEnPage.largeurIntitule
             dictParamBulletins['largeurDescriptif'] = self.miseEnPage.largeurDescriptif
             dictParamBulletins['largeurEvaluation'] = self.miseEnPage.largeurEvaluation
+            dictParamBulletins['afficher_descriptif_classe'] = self.miseEnPage.afficher_descriptif_classe
             # Ajout des signatures si elles existent
             try:
                 if self.miseEnPage.signature_directeur_college and self.miseEnPage.signature_directeur_college.name:
