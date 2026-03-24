@@ -673,3 +673,25 @@ class SMTPSettingsForm(forms.ModelForm):
             'email_subject': 'Objet personnalisé pour les emails de bulletins. Variables disponibles : {prenom}, {nom}, {trimestres}',
             'email_message': 'Message personnalisé qui accompagne l\'envoi des bulletins. Variables disponibles : {prenom}, {nom}, {trimestres}',
         }
+
+
+class SeuilsCompteurCaracteresForm(forms.ModelForm):
+    class Meta:
+        model = models.SeuilsCompteurCaracteres
+        fields = '__all__'
+        widgets = {
+            'discipline_commentaire_warning': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'discipline_commentaire_danger': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'discipline_descriptif_warning': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'discipline_descriptif_danger': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'stage_descriptif_warning': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'stage_descriptif_danger': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'stage_appreciation_warning': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'stage_appreciation_danger': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'projet_descriptif_warning': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'projet_descriptif_danger': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'projet_appreciation_warning': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'projet_appreciation_danger': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'avis_college_warning': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'avis_college_danger': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+        }

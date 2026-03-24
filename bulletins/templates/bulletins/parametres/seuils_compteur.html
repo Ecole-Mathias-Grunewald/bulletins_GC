@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" aria-current="page">Compteur de caractères</li>
+{% endblock breadcrumb %}
+{% block content %}
+<div class="container-fluid container-md">
+    <h1 class="mb-2 mt-2 mt-sm-4">Compteur de caractères</h1>
+    <p class="text-muted mb-4">Définissez les seuils au-delà desquels le compteur passe en orange (avertissement) puis en rouge (danger).</p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+
+        {% if form.errors %}
+        <div class="alert alert-danger">Veuillez corriger les erreurs ci-dessous.</div>
+        {% endif %}
+
+        <!-- Discipline – Commentaire -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Évaluation discipline – Commentaire</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
+                        {{ form.discipline_commentaire_warning }}
+                        {% if form.discipline_commentaire_warning.errors %}<div class="text-danger small">{{ form.discipline_commentaire_warning.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
+                        {{ form.discipline_commentaire_danger }}
+                        {% if form.discipline_commentaire_danger.errors %}<div class="text-danger small">{{ form.discipline_commentaire_danger.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discipline – Descriptif -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Discipline – Descriptif</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
+                        {{ form.discipline_descriptif_warning }}
+                        {% if form.discipline_descriptif_warning.errors %}<div class="text-danger small">{{ form.discipline_descriptif_warning.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
+                        {{ form.discipline_descriptif_danger }}
+                        {% if form.discipline_descriptif_danger.errors %}<div class="text-danger small">{{ form.discipline_descriptif_danger.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stage – Descriptif -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Stage – Descriptif</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
+                        {{ form.stage_descriptif_warning }}
+                        {% if form.stage_descriptif_warning.errors %}<div class="text-danger small">{{ form.stage_descriptif_warning.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
+                        {{ form.stage_descriptif_danger }}
+                        {% if form.stage_descriptif_danger.errors %}<div class="text-danger small">{{ form.stage_descriptif_danger.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stage – Appréciation -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Stage – Appréciation</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
+                        {{ form.stage_appreciation_warning }}
+                        {% if form.stage_appreciation_warning.errors %}<div class="text-danger small">{{ form.stage_appreciation_warning.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
+                        {{ form.stage_appreciation_danger }}
+                        {% if form.stage_appreciation_danger.errors %}<div class="text-danger small">{{ form.stage_appreciation_danger.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projet – Descriptif -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Projet – Descriptif</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
+                        {{ form.projet_descriptif_warning }}
+                        {% if form.projet_descriptif_warning.errors %}<div class="text-danger small">{{ form.projet_descriptif_warning.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
+                        {{ form.projet_descriptif_danger }}
+                        {% if form.projet_descriptif_danger.errors %}<div class="text-danger small">{{ form.projet_descriptif_danger.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projet – Appréciation -->
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Projet – Appréciation</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
+                        {{ form.projet_appreciation_warning }}
+                        {% if form.projet_appreciation_warning.errors %}<div class="text-danger small">{{ form.projet_appreciation_warning.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
+                        {{ form.projet_appreciation_danger }}
+                        {% if form.projet_appreciation_danger.errors %}<div class="text-danger small">{{ form.projet_appreciation_danger.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avis collégial -->
+        <div class="card mb-4">
+            <div class="card-header fw-semibold">Avis collégial</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
+                        {{ form.avis_college_warning }}
+                        {% if form.avis_college_warning.errors %}<div class="text-danger small">{{ form.avis_college_warning.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
+                        {{ form.avis_college_danger }}
+                        {% if form.avis_college_danger.errors %}<div class="text-danger small">{{ form.avis_college_danger.errors }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mb-5">
+            <button type="submit" class="btn btn-primary shadow">Enregistrer</button>
+        </div>
+    </form>
+</div>
+{% endblock content %}

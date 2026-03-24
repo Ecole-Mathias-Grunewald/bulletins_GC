@@ -214,6 +214,9 @@ urlpatterns = [
     
     #Paramètres SMTP
     path('smtp/settings/',bulletins.views.smtp_settings,name='smtp_settings'),
+
+    #Seuils compteur de caractères
+    path('parametres/seuils-compteur/', bulletins.views.seuils_compteur, name='seuils_compteur'),
     
     #Ordre des disciplines
     path('ordre/disciplines/',bulletins.views.ordre_disciplines,name='ordre_disciplines'),

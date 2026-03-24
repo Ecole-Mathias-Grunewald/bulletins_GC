@@ -1001,3 +1001,40 @@ class SMTPSettings(models.Model):
         if not obj.email_subject or not obj.email_message:
             obj.save()
         return obj
+
+
+class SeuilsCompteurCaracteres(models.Model):
+    """
+    Modèle singleton pour configurer les seuils du compteur de caractères
+    affichés sous les champs texte des formulaires de saisie.
+    """
+    discipline_commentaire_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
+    discipline_commentaire_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    discipline_descriptif_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
+    discipline_descriptif_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    stage_descriptif_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
+    stage_descriptif_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    stage_appreciation_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
+    stage_appreciation_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    projet_descriptif_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
+    projet_descriptif_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    projet_appreciation_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
+    projet_appreciation_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    avis_college_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
+    avis_college_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+
+    class Meta:
+        verbose_name = 'Seuils compteur de caractères'
+        verbose_name_plural = 'Seuils compteur de caractères'
+
+    def __str__(self):
+        return 'Seuils compteur de caractères'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_settings(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

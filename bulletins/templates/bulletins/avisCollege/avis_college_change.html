@@ -48,8 +48,11 @@
                     <div class="col-12 col-lg-6 col-xl-5">
 
                             <div class="form-floating mb-3">
-                                {{form.avis|add_classes:'form-control h200px'}}
+                                {{form.avis|add_classes:'form-control h200px char-count-field'}}
                                 <label for="{{form.avis.id_for_label}}"">Avis</label>
+                            </div>
+                            <div class="text-end mb-2">
+                                <small class="char-counter text-muted">0 caractère</small>
                             </div>
 
                     </div>
@@ -80,4 +83,31 @@
 
 
 
+<script{% if request.csp_nonce %} nonce="{{ request.csp_nonce }}"{% endif %}>
+(function() {
+    var textareas = document.querySelectorAll('.char-count-field');
+    var counters = document.querySelectorAll('.char-counter');
+    var seuils = [{warning: {{ seuils_compteur.avis_college_warning }}, danger: {{ seuils_compteur.avis_college_danger }}}];
+    function updateCounter(textarea, counter, seuilWarning, seuilDanger) {
+        var count = textarea.value.length;
+        var label = count <= 1 ? 'caractère' : 'caractères';
+        counter.textContent = count + ' ' + label;
+        counter.className = 'char-counter';
+        if (count > seuilDanger) {
+            counter.classList.add('text-danger', 'fw-bold');
+        } else if (count > seuilWarning) {
+            counter.classList.add('text-warning', 'fw-bold');
+        } else {
+            counter.classList.add('text-muted');
+        }
+    }
+    textareas.forEach(function(textarea, i) {
+        var counter = counters[i];
+        if (!counter) return;
+        var s = seuils[i] || seuils[seuils.length - 1];
+        updateCounter(textarea, counter, s.warning, s.danger);
+        textarea.addEventListener('input', function() { updateCounter(textarea, counter, s.warning, s.danger); });
+    });
+})();
+</script>
 {% endblock content %}

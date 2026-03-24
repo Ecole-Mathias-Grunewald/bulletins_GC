@@ -1849,6 +1849,31 @@ def mise_en_page_change(request,idMiseEnPage):
         return render(request,'bulletins/miseEnPage/mise_en_page_change.html',context={'annee_en_cours': annee_en_cours, 'form': form, 'mise_en_page': mise_en_page})
 
 @login_required
+def seuils_compteur(request):
+    """
+    Vue pour configurer les seuils du compteur de caractères.
+    Réservée aux administrateurs uniquement.
+    """
+    if request.user.role != 'ADMIN':
+        return redirect('home')
+    annee_en_cours = models.Annee.objects.filter(is_active=True)[0]
+    seuils = models.SeuilsCompteurCaracteres.get_settings()
+    if request.method == 'POST':
+        form = forms.SeuilsCompteurCaracteresForm(request.POST, instance=seuils)
+        if form.is_valid():
+            form.save()
+            info = models.Journal(utilisateur=request.user, message='Modification des seuils du compteur de caractères')
+            info.save()
+            return redirect('seuils_compteur')
+    else:
+        form = forms.SeuilsCompteurCaracteresForm(instance=seuils)
+    return render(request, 'bulletins/parametres/seuils_compteur.html', context={
+        'annee_en_cours': annee_en_cours,
+        'form': form,
+    })
+
+
+@login_required
 def smtp_settings(request):
     """
     Vue pour gérer les paramètres SMTP.
