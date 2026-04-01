@@ -150,6 +150,15 @@ def creerBulletinAppreciations(appreciation,competences,canvas,dictParamBulletin
                     dict_evaluation['min'] = appreciation.discipline.notePlusBasse
                 if appreciation.discipline.notePlusHaute is not None:
                     dict_evaluation['max'] = appreciation.discipline.notePlusHaute
+                if dictParamBulletins.get('afficher_rang'):
+                    notes_distinctes = sorted(
+                        set(appreciation.discipline.appreciation_set.exclude(note=None).values_list('note', flat=True)),
+                        reverse=True
+                    )
+                    rang_par_note = {note: i + 1 for i, note in enumerate(notes_distinctes)}
+                    rang = rang_par_note.get(appreciation.note)
+                    if rang is not None:
+                        dict_evaluation['rang'] = rang
         elif appreciation.resultat != None and appreciation.resultat != '':
             dict_evaluation['resultat'] = appreciation.resultat
 

@@ -65,9 +65,13 @@ def ligneEvaluation(dictEvaluation,largeurRubrique,largeurEvaluationRubrique,tai
         colonnesLigneEvaluation.append(largeurRubrique)
         donneesLigneEvaluation.append(dictEvaluation['note'])
         colonnesLigneEvaluation.append(largeurEvaluationRubrique)
-        if 'moyenne' in dictEvaluation.keys() or 'min' in dictEvaluation.keys() or 'max' in dictEvaluation.keys():
+        if 'moyenne' in dictEvaluation.keys() or 'min' in dictEvaluation.keys() or 'max' in dictEvaluation.keys() or 'rang' in dictEvaluation.keys():
             texte = ""
+            if 'rang' in dictEvaluation.keys():
+                texte += f"rang : {dictEvaluation['rang']}"
             if 'moyenne' in dictEvaluation.keys():
+                if texte:
+                    texte += " | "
                 texte += f"moy. clas. : {dictEvaluation['moyenne']}"
             if 'min' in dictEvaluation.keys():
                 if texte:
