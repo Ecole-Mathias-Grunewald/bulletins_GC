@@ -11,36 +11,36 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='seuilscompteurcaracteres',
             name='discipline_commentaire_limit',
-            field=models.PositiveIntegerField(default=0, help_text='0 = pas de limite', verbose_name='Limite stricte'),
+            field=models.PositiveIntegerField(default=1000, help_text='0 = pas de limite', verbose_name='Limite stricte'),
         ),
         migrations.AddField(
             model_name='seuilscompteurcaracteres',
             name='discipline_descriptif_limit',
-            field=models.PositiveIntegerField(default=0, help_text='0 = pas de limite', verbose_name='Limite stricte'),
+            field=models.PositiveIntegerField(default=1000, help_text='0 = pas de limite', verbose_name='Limite stricte'),
         ),
         migrations.AddField(
             model_name='seuilscompteurcaracteres',
             name='stage_descriptif_limit',
-            field=models.PositiveIntegerField(default=0, help_text='0 = pas de limite', verbose_name='Limite stricte'),
+            field=models.PositiveIntegerField(default=1000, help_text='0 = pas de limite', verbose_name='Limite stricte'),
         ),
         migrations.AddField(
             model_name='seuilscompteurcaracteres',
             name='stage_appreciation_limit',
-            field=models.PositiveIntegerField(default=0, help_text='0 = pas de limite', verbose_name='Limite stricte'),
+            field=models.PositiveIntegerField(default=1000, help_text='0 = pas de limite', verbose_name='Limite stricte'),
         ),
         migrations.AddField(
             model_name='seuilscompteurcaracteres',
             name='projet_descriptif_limit',
-            field=models.PositiveIntegerField(default=0, help_text='0 = pas de limite', verbose_name='Limite stricte'),
+            field=models.PositiveIntegerField(default=1000, help_text='0 = pas de limite', verbose_name='Limite stricte'),
         ),
         migrations.AddField(
             model_name='seuilscompteurcaracteres',
             name='projet_appreciation_limit',
-            field=models.PositiveIntegerField(default=0, help_text='0 = pas de limite', verbose_name='Limite stricte'),
+            field=models.PositiveIntegerField(default=1000, help_text='0 = pas de limite', verbose_name='Limite stricte'),
         ),
         migrations.AddField(
             model_name='seuilscompteurcaracteres',
             name='avis_college_limit',
-            field=models.PositiveIntegerField(default=0, help_text='0 = pas de limite', verbose_name='Limite stricte'),
+            field=models.PositiveIntegerField(default=1000, help_text='0 = pas de limite', verbose_name='Limite stricte'),
         ),
     ]
