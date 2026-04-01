@@ -201,17 +201,18 @@ def espace(story,h=0.25):
     story.append(Spacer(20 * cm, h * cm))
 
 def absencesRetards(absence,dictParamBulletins):
+    periode = 'semestre' if dictParamBulletins.get('bulletin_semestriel') else 'trimestre'
     retardsAbsences = ''
     if absence.nbRetard!=0:
-        retardsAbsences = f"Nombre de retard en classe injustifié au cours du trimestre : {absence.nbRetard} <br />"
+        retardsAbsences = f"Nombre de retard en classe injustifié au cours du {periode} : {absence.nbRetard} <br />"
     if absence.nbAbsenceTot != 0:
-        retardsAbsences += f"Nombre de demi-journées d'absence au cours du trimestre : {absence.nbAbsenceTot},"
+        retardsAbsences += f"Nombre de demi-journées d'absence au cours du {periode} : {absence.nbAbsenceTot},"
         if absence.nbAbsenceNonExc == 0:
             retardsAbsences += " aucune non-excusée <br />"
         else :
             retardsAbsences += f" dont {absence.nbAbsenceNonExc} non-excusée(s) <br />"
     if retardsAbsences == '' :
-        retardsAbsences=f"Aucune absence ou retard injustifié au cours du trimestre"
+        retardsAbsences=f"Aucune absence ou retard injustifié au cours du {periode}"
     return Paragraph(retardsAbsences,pdf_styles.retardsAbsences(dictParamBulletins['fontSize'],dictParamBulletins['font']))
 
 def avisCollege(avisCollege,dictParamBulletins,story):
