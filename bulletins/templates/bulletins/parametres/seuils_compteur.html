@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container-fluid container-md">
     <h1 class="mb-2 mt-2 mt-sm-4">Compteur de caractères</h1>
-    <p class="text-muted mb-4">Définissez les seuils au-delà desquels le compteur passe en orange (avertissement) puis en rouge (danger).</p>
+    <p class="text-muted mb-4">Définissez les seuils au-delà desquels le compteur passe en orange (avertissement) puis en rouge (danger), et la limite stricte (0 = pas de limite) au-delà de laquelle la saisie est bloquée.</p>
 
     <form method="post">
         {% csrf_token %}
@@ -26,15 +26,20 @@
             <div class="card-header fw-semibold">Évaluation discipline – Commentaire</div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
                         {{ form.discipline_commentaire_warning }}
                         {% if form.discipline_commentaire_warning.errors %}<div class="text-danger small">{{ form.discipline_commentaire_warning.errors }}</div>{% endif %}
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
                         {{ form.discipline_commentaire_danger }}
                         {% if form.discipline_commentaire_danger.errors %}<div class="text-danger small">{{ form.discipline_commentaire_danger.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold">Limite stricte <small class="text-muted fw-normal">(0 = aucune)</small></label>
+                        {{ form.discipline_commentaire_limit }}
+                        {% if form.discipline_commentaire_limit.errors %}<div class="text-danger small">{{ form.discipline_commentaire_limit.errors }}</div>{% endif %}
                     </div>
                 </div>
             </div>
@@ -45,15 +50,20 @@
             <div class="card-header fw-semibold">Discipline – Descriptif</div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
                         {{ form.discipline_descriptif_warning }}
                         {% if form.discipline_descriptif_warning.errors %}<div class="text-danger small">{{ form.discipline_descriptif_warning.errors }}</div>{% endif %}
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
                         {{ form.discipline_descriptif_danger }}
                         {% if form.discipline_descriptif_danger.errors %}<div class="text-danger small">{{ form.discipline_descriptif_danger.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold">Limite stricte <small class="text-muted fw-normal">(0 = aucune)</small></label>
+                        {{ form.discipline_descriptif_limit }}
+                        {% if form.discipline_descriptif_limit.errors %}<div class="text-danger small">{{ form.discipline_descriptif_limit.errors }}</div>{% endif %}
                     </div>
                 </div>
             </div>
@@ -64,15 +74,20 @@
             <div class="card-header fw-semibold">Stage – Descriptif</div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
                         {{ form.stage_descriptif_warning }}
                         {% if form.stage_descriptif_warning.errors %}<div class="text-danger small">{{ form.stage_descriptif_warning.errors }}</div>{% endif %}
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
                         {{ form.stage_descriptif_danger }}
                         {% if form.stage_descriptif_danger.errors %}<div class="text-danger small">{{ form.stage_descriptif_danger.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold">Limite stricte <small class="text-muted fw-normal">(0 = aucune)</small></label>
+                        {{ form.stage_descriptif_limit }}
+                        {% if form.stage_descriptif_limit.errors %}<div class="text-danger small">{{ form.stage_descriptif_limit.errors }}</div>{% endif %}
                     </div>
                 </div>
             </div>
@@ -83,15 +98,20 @@
             <div class="card-header fw-semibold">Stage – Appréciation</div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
                         {{ form.stage_appreciation_warning }}
                         {% if form.stage_appreciation_warning.errors %}<div class="text-danger small">{{ form.stage_appreciation_warning.errors }}</div>{% endif %}
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
                         {{ form.stage_appreciation_danger }}
                         {% if form.stage_appreciation_danger.errors %}<div class="text-danger small">{{ form.stage_appreciation_danger.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold">Limite stricte <small class="text-muted fw-normal">(0 = aucune)</small></label>
+                        {{ form.stage_appreciation_limit }}
+                        {% if form.stage_appreciation_limit.errors %}<div class="text-danger small">{{ form.stage_appreciation_limit.errors }}</div>{% endif %}
                     </div>
                 </div>
             </div>
@@ -102,15 +122,20 @@
             <div class="card-header fw-semibold">Projet – Descriptif</div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
                         {{ form.projet_descriptif_warning }}
                         {% if form.projet_descriptif_warning.errors %}<div class="text-danger small">{{ form.projet_descriptif_warning.errors }}</div>{% endif %}
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
                         {{ form.projet_descriptif_danger }}
                         {% if form.projet_descriptif_danger.errors %}<div class="text-danger small">{{ form.projet_descriptif_danger.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold">Limite stricte <small class="text-muted fw-normal">(0 = aucune)</small></label>
+                        {{ form.projet_descriptif_limit }}
+                        {% if form.projet_descriptif_limit.errors %}<div class="text-danger small">{{ form.projet_descriptif_limit.errors }}</div>{% endif %}
                     </div>
                 </div>
             </div>
@@ -121,15 +146,20 @@
             <div class="card-header fw-semibold">Projet – Appréciation</div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
                         {{ form.projet_appreciation_warning }}
                         {% if form.projet_appreciation_warning.errors %}<div class="text-danger small">{{ form.projet_appreciation_warning.errors }}</div>{% endif %}
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
                         {{ form.projet_appreciation_danger }}
                         {% if form.projet_appreciation_danger.errors %}<div class="text-danger small">{{ form.projet_appreciation_danger.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold">Limite stricte <small class="text-muted fw-normal">(0 = aucune)</small></label>
+                        {{ form.projet_appreciation_limit }}
+                        {% if form.projet_appreciation_limit.errors %}<div class="text-danger small">{{ form.projet_appreciation_limit.errors }}</div>{% endif %}
                     </div>
                 </div>
             </div>
@@ -140,15 +170,20 @@
             <div class="card-header fw-semibold">Avis collégial</div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-warning fw-semibold">Seuil avertissement (orange)</label>
                         {{ form.avis_college_warning }}
                         {% if form.avis_college_warning.errors %}<div class="text-danger small">{{ form.avis_college_warning.errors }}</div>{% endif %}
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                         <label class="form-label text-danger fw-semibold">Seuil danger (rouge)</label>
                         {{ form.avis_college_danger }}
                         {% if form.avis_college_danger.errors %}<div class="text-danger small">{{ form.avis_college_danger.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold">Limite stricte <small class="text-muted fw-normal">(0 = aucune)</small></label>
+                        {{ form.avis_college_limit }}
+                        {% if form.avis_college_limit.errors %}<div class="text-danger small">{{ form.avis_college_limit.errors }}</div>{% endif %}
                     </div>
                 </div>
             </div>

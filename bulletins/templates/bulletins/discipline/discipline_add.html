@@ -192,26 +192,36 @@
 (function() {
     var textareas = document.querySelectorAll('.char-count-field');
     var counters = document.querySelectorAll('.char-counter');
-    var seuils = [{warning: {{ seuils_compteur.discipline_descriptif_warning }}, danger: {{ seuils_compteur.discipline_descriptif_danger }}}];
-    function updateCounter(textarea, counter, seuilWarning, seuilDanger) {
+    var seuils = [{warning: {{ seuils_compteur.discipline_descriptif_warning }}, danger: {{ seuils_compteur.discipline_descriptif_danger }}, limit: {{ seuils_compteur.discipline_descriptif_limit }}}];
+    function updateCounter(textarea, counter, seuilWarning, seuilDanger, limit) {
+        if (limit > 0) { textarea.maxLength = limit; }
         var count = textarea.value.length;
         var label = count <= 1 ? 'caractère' : 'caractères';
-        counter.textContent = count + ' ' + label;
         counter.className = 'char-counter';
-        if (count > seuilDanger) {
+        if (limit > 0 && count >= limit) {
             counter.classList.add('text-danger', 'fw-bold');
-        } else if (count > seuilWarning) {
-            counter.classList.add('text-warning', 'fw-bold');
+            counter.textContent = 'Limite atteinte : ' + count + ' / ' + limit + ' ' + label;
         } else {
-            counter.classList.add('text-muted');
+            if (limit > 0) {
+                counter.textContent = count + ' / ' + limit + ' ' + label;
+            } else {
+                counter.textContent = count + ' ' + label;
+            }
+            if (count > seuilDanger) {
+                counter.classList.add('text-danger', 'fw-bold');
+            } else if (count > seuilWarning) {
+                counter.classList.add('text-warning', 'fw-bold');
+            } else {
+                counter.classList.add('text-muted');
+            }
         }
     }
     textareas.forEach(function(textarea, i) {
         var counter = counters[i];
         if (!counter) return;
         var s = seuils[i] || seuils[seuils.length - 1];
-        updateCounter(textarea, counter, s.warning, s.danger);
-        textarea.addEventListener('input', function() { updateCounter(textarea, counter, s.warning, s.danger); });
+        updateCounter(textarea, counter, s.warning, s.danger, s.limit || 0);
+        textarea.addEventListener('input', function() { updateCounter(textarea, counter, s.warning, s.danger, s.limit || 0); });
     });
 })();
 </script>

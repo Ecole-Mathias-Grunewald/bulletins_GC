@@ -170,11 +170,11 @@ class Projet(models.Model):
     typeProjet=models.CharField(max_length=60, choices=TypeProjet.choices)
     titre = models.CharField(max_length=60, null=True, blank=True)
     titre_correction = models.CharField(max_length=60, null=True, blank=True)
-    descriptif = models.CharField(max_length=800, blank=True, null=True)
-    descriptif_correction = models.CharField(max_length=800, blank=True, null=True)
-    appreciation = models.CharField(max_length=800, blank=True, null=True)
-    appreciation_correction = models.CharField(max_length=800, blank=True, null=True)
-    remarque_correction = models.CharField(max_length=800, blank=True, null=True)
+    descriptif = models.TextField(blank=True, null=True)
+    descriptif_correction = models.TextField(blank=True, null=True)
+    appreciation = models.TextField(blank=True, null=True)
+    appreciation_correction = models.TextField(blank=True, null=True)
+    remarque_correction = models.TextField(blank=True, null=True)
     relectureActive = models.BooleanField(default=False, verbose_name='ouvert à relecture')
     presentBulletin = models.BooleanField(default=True, verbose_name='intégrer au bulletin')
     trimestre = models.ForeignKey(Trimestre, on_delete=models.CASCADE)
@@ -227,15 +227,15 @@ class Stage(models.Model):
     eleve=models.ForeignKey(Eleve,
                                 on_delete=models.CASCADE
                                 )
-    descriptif = models.CharField(max_length=800, blank=True, null=True)
-    descriptif_correction = models.CharField(max_length=800, blank=True, null=True)
-    appreciation = models.CharField(max_length=1000, blank=True, null=True)
-    appreciation_correction = models.CharField(max_length=1000, blank=True, null=True)
+    descriptif = models.TextField(blank=True, null=True)
+    descriptif_correction = models.TextField(blank=True, null=True)
+    appreciation = models.TextField(blank=True, null=True)
+    appreciation_correction = models.TextField(blank=True, null=True)
     dateDebut = models.DateField(null=True, blank=True, verbose_name='A débuté le : ')
     dateFin = models.DateField(null=True, blank=True, verbose_name="S'est terminé le : ")
     trimestre = models.ForeignKey(Trimestre, on_delete=models.CASCADE)
     relectureActive=models.BooleanField(default=False,verbose_name='ouvert à relecture')
-    remarque_correction = models.CharField(max_length=800, blank=True, null=True)
+    remarque_correction = models.TextField(blank=True, null=True)
     presentBulletin = models.BooleanField(default=True, verbose_name='intégrer au bulletin')
     relecteur = models.ForeignKey(settings.AUTH_USER_MODEL,
                                 null=True,
@@ -317,11 +317,11 @@ class Discipline(models.Model):
     intitule_court=models.CharField(max_length=30,blank=True,null=True)
     titre=models.CharField(max_length=200,blank=True,null=True)
     titre_correction=models.CharField(max_length=200,blank=True,null=True)
-    remarque_correction=models.CharField(max_length=800, blank=True, null=True)
+    remarque_correction=models.TextField(blank=True, null=True)
     typeEnseignement=models.CharField(max_length=60,blank=True,null=True,choices=TypeEnseignement.choices)
     volumeHoraire=models.PositiveIntegerField(blank=True,null=True)
-    descriptif=models.CharField(max_length=600,blank=True,null=True)
-    descriptif_correction = models.CharField(max_length=600, blank=True, null=True)
+    descriptif=models.TextField(blank=True,null=True)
+    descriptif_correction = models.TextField(blank=True, null=True)
     dateDebut=models.DateField(null=True,blank=True,verbose_name='A débuté le : ')
     dateFin=models.DateField(null=True,blank=True,verbose_name="S'est terminée le : ")
     trimestre=models.ForeignKey(Trimestre,null=True,on_delete=models.SET_NULL)
@@ -431,9 +431,9 @@ class CompetencesConnaissances(models.Model):
         return self.intitule
 
 class Appreciation(models.Model):
-    commentaire=models.TextField(max_length=1000,null=True,blank=True)
-    commentaire_correction=models.TextField(max_length=1000,null=True,blank=True)
-    remarque_correction=models.TextField(max_length=600,null=True,blank=True)
+    commentaire=models.TextField(null=True,blank=True)
+    commentaire_correction=models.TextField(null=True,blank=True)
+    remarque_correction=models.TextField(null=True,blank=True)
     note=models.DecimalField(max_digits=4,decimal_places=2,null=True,blank=True)
     attitude=models.CharField(max_length=2,null=True,blank=True)
     engagement=models.CharField(max_length=2, null=True, blank=True)
@@ -472,7 +472,7 @@ class CompetencesAppreciations(models.Model):
 class AvisCollege(models.Model):
     eleve=models.ForeignKey(Eleve,on_delete=models.CASCADE)
     trimestre=models.ForeignKey(Trimestre,on_delete=models.CASCADE)
-    avis=models.TextField(max_length=1000,null=True,blank=True)
+    avis=models.TextField(null=True,blank=True)
 
     class Meta :
         unique_together=('eleve','trimestre')
@@ -480,7 +480,7 @@ class AvisCollege(models.Model):
 class AvantPropos(models.Model):
     eleve=models.ForeignKey(Eleve,on_delete=models.CASCADE)
     trimestre=models.ForeignKey(Trimestre,on_delete=models.CASCADE)
-    contenu=models.TextField(max_length=1000,null=True,blank=True, verbose_name='Contenu')
+    contenu=models.TextField(null=True,blank=True, verbose_name='Contenu')
     cree_par=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='avant_propos_crees', verbose_name='Créé par')
     modifie_par=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='avant_propos_modifies', verbose_name='Modifié par')
     date_creation=models.DateTimeField(auto_now_add=True, verbose_name='Date de création')
@@ -519,6 +519,7 @@ class MiseEnPageBulletin(models.Model):
     par_defaut=models.BooleanField(default=False, verbose_name='Mise en page par défaut', help_text="Si coché, cette mise en page sera utilisée par défaut lors de l'édition des bulletins si aucune mise en page n'est spécifiée.")
     afficher_descriptif_classe=models.BooleanField(default=False, verbose_name='Afficher le descriptif de la classe', help_text="Si coché, le descriptif de la classe s'affiche à la suite de son nom dans l'en-tête du bulletin.")
     bulletin_semestriel=models.BooleanField(default=False, verbose_name='Bulletin semestriel', help_text="Si coché, le terme «Trimestre» est remplacé par «Semestre» dans l'en-tête du bulletin.")
+    afficher_rang=models.BooleanField(default=False, verbose_name="Afficher le rang de l'élève", help_text="Si coché, le rang de l'élève s'affiche sur la ligne des statistiques (moyenne, min, max) dans les matières où il est activé.")
 
     def __str__(self):
         return self.intitule
@@ -612,6 +613,7 @@ class ListBulletinScolaire(models.Model):
                         'largeurEvaluation':55,
                         'afficher_descriptif_classe': False,
                         'bulletin_semestriel': False,
+                        'afficher_rang': False,
                         }
 
 
@@ -632,6 +634,7 @@ class ListBulletinScolaire(models.Model):
             dictParamBulletins['largeurEvaluation'] = self.miseEnPage.largeurEvaluation
             dictParamBulletins['afficher_descriptif_classe'] = self.miseEnPage.afficher_descriptif_classe
             dictParamBulletins['bulletin_semestriel'] = self.miseEnPage.bulletin_semestriel
+            dictParamBulletins['afficher_rang'] = self.miseEnPage.afficher_rang
             # Ajout des signatures si elles existent
             try:
                 if self.miseEnPage.signature_directeur_college and self.miseEnPage.signature_directeur_college.name:
@@ -797,6 +800,7 @@ class ListBulletinScolaire(models.Model):
                         'largeurEvaluation':55,
                         'afficher_descriptif_classe': False,
                         'bulletin_semestriel': False,
+                        'afficher_rang': False,
                         }
 
 
@@ -817,6 +821,7 @@ class ListBulletinScolaire(models.Model):
             dictParamBulletins['largeurEvaluation'] = self.miseEnPage.largeurEvaluation
             dictParamBulletins['afficher_descriptif_classe'] = self.miseEnPage.afficher_descriptif_classe
             dictParamBulletins['bulletin_semestriel'] = self.miseEnPage.bulletin_semestriel
+            dictParamBulletins['afficher_rang'] = self.miseEnPage.afficher_rang
             # Ajout des signatures si elles existent
             try:
                 if self.miseEnPage.signature_directeur_college and self.miseEnPage.signature_directeur_college.name:
@@ -1021,18 +1026,25 @@ class SeuilsCompteurCaracteres(models.Model):
     """
     discipline_commentaire_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
     discipline_commentaire_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    discipline_commentaire_limit = models.PositiveIntegerField(default=0, verbose_name='Limite stricte', help_text='0 = pas de limite')
     discipline_descriptif_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
     discipline_descriptif_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    discipline_descriptif_limit = models.PositiveIntegerField(default=0, verbose_name='Limite stricte', help_text='0 = pas de limite')
     stage_descriptif_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
     stage_descriptif_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    stage_descriptif_limit = models.PositiveIntegerField(default=0, verbose_name='Limite stricte', help_text='0 = pas de limite')
     stage_appreciation_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
     stage_appreciation_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    stage_appreciation_limit = models.PositiveIntegerField(default=0, verbose_name='Limite stricte', help_text='0 = pas de limite')
     projet_descriptif_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
     projet_descriptif_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    projet_descriptif_limit = models.PositiveIntegerField(default=0, verbose_name='Limite stricte', help_text='0 = pas de limite')
     projet_appreciation_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
     projet_appreciation_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    projet_appreciation_limit = models.PositiveIntegerField(default=0, verbose_name='Limite stricte', help_text='0 = pas de limite')
     avis_college_warning = models.PositiveIntegerField(default=500, verbose_name='Seuil avertissement')
     avis_college_danger = models.PositiveIntegerField(default=800, verbose_name='Seuil danger')
+    avis_college_limit = models.PositiveIntegerField(default=0, verbose_name='Limite stricte', help_text='0 = pas de limite')
 
     class Meta:
         verbose_name = 'Seuils compteur de caractères'
